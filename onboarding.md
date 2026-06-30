@@ -63,6 +63,8 @@ Por defecto, la carga usa Ollama.
 
 La recuperación también usa metadatos del documento para priorizar el manual correcto cuando la consulta apunta a un tema específico, por ejemplo usuarios, nómina o facturación.
 
+Cuando el router detecta un módulo claro, el buscador intenta primero dentro de ese manual usando `manual_code` para evitar mezclar chunks de otros manuales.
+
 Si necesitas agregar nuevas referencias, edita `app/core/manual_routing.py` y añade el código del manual con sus palabras clave.
 
 Si prefieres mantener las reglas fuera del código, edita `app/core/manual_routing.yml`.
@@ -112,6 +114,14 @@ La subida desde el frontend procesa solo los archivos nuevos y evita reconstruir
 Debajo de la carga de documentos hay una opción de reindexación que reutiliza el mismo proveedor y modelo configurados para la carga.
 
 La ingesta añade metadatos como `manual_code` y `document_title` para ayudar a que la recuperación favorezca el manual más específico.
+
+Regla práctica:
+
+- Si solo cambias pesos, sinónimos o reglas en `app/core/manual_routing.yml`, no necesitas volver a generar embeddings.
+- Si cambias cómo se etiqueta cada documento al indexar, o quieres que los PDFs ya cargados tengan los nuevos metadatos, sí conviene reindexar una vez.
+- Si subes documentos nuevos desde el frontend, esos ya se indexan con la lógica nueva y no hace falta tocar todo el corpus.
+
+En la práctica, lo recomendado es hacer un reindexado completo una sola vez para los manuales ya cargados y después solo reindexar cuando agregues nuevos documentos o cambies la estructura de metadatos.
 
 Script manual:
 

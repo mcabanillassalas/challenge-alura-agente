@@ -170,6 +170,8 @@ Ejemplos útiles para ampliar el mapa: "alta de usuarios", "asignar permisos", "
 
 El archivo YAML admite pesos por regla, así que las frases más específicas pueden tener prioridad sobre palabras sueltas.
 
+Cuando el router identifica un módulo, la recuperación primero busca dentro de ese manual usando `manual_code` para reducir ruido entre documentos.
+
 Para más detalle, revisa [docs/architecture.md](docs/architecture.md) y [plan-accion.md](plan-accion.md).
 
 ## Notas

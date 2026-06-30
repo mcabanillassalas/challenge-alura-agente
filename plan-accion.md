@@ -89,6 +89,8 @@ Objetivo: extraer el contenido de los PDFs y dejarlo listo para indexación.
 - Recuperación que prioriza el manual correcto cuando la consulta apunta a usuarios, nómina, facturación u otro módulo específico.
 - Reglas de enrutamiento centralizadas para extender nuevos temas o manuales sin tocar la lógica del RAG.
 - Reglas de enrutamiento editables desde un archivo YAML dedicado.
+- Búsqueda acotada por `manual_code` cuando el router detecta un módulo claro.
+- Recuperación filtrada primero por manual cuando la consulta tiene un destino temático claro.
 
 ### Criterio de cierre
 

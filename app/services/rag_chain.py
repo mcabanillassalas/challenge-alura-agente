@@ -6,7 +6,7 @@ from app.services.vectorstore import get_vectorstore
 
 
 def _tokenize(text: str) -> set[str]:
-    normalized = _normalize_text(text)
+    normalized = normalize_text(text)
     tokens = set(normalized.replace("/", " ").replace("-", " ").split())
     return {token for token in tokens if len(token) > 2}
 
@@ -87,8 +87,17 @@ def answer_question(
     llm_model: str | None = None,
 ) -> AskResponse:
     vectorstore = get_vectorstore()
+    target_manual_code = _infer_manual_code(question)
     fetch_k = max(settings.top_k * 4, 8)
-    docs_with_scores = vectorstore.similarity_search_with_score(question, k=fetch_k)
+    search_kwargs = {"k": fetch_k}
+    if target_manual_code:
+        search_kwargs["filter"] = {"manual_code": target_manual_code}
+
+    docs_with_scores = vectorstore.similarity_search_with_score(question, **search_kwargs)
+
+    if not docs_with_scores and target_manual_code:
+        docs_with_scores = vectorstore.similarity_search_with_score(question, k=fetch_k)
+
     docs = _rank_documents(question, docs_with_scores)[: settings.top_k]
 
     if not docs:
