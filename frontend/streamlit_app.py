@@ -50,10 +50,38 @@ def ask_question(question: str, llm_provider: str, llm_model: str) -> dict[str, 
 
 
 def render_sidebar() -> None:
-    st.sidebar.title("Configuración")
-    st.sidebar.caption("La UI consume la API FastAPI ya levantada.")
+    # st.sidebar.text_input("API Base URL", value=API_BASE_URL, disabled=True)
+
+    llm_provider = os.getenv("LLM_PROVIDER", "(desde backend)")
+    embedding_provider = os.getenv("EMBEDDING_PROVIDER", "(desde backend)")
+    ollama_llm_model = os.getenv("OLLAMA_LLM_MODEL", "(desde backend)")
+    ollama_embedding_model = os.getenv("OLLAMA_EMBEDDING_MODEL", "(desde backend)")
+    
+
+    st.sidebar.markdown("### Sugerencias de prueba")
+    st.sidebar.markdown(
+        "- ¿Cómo se crea una factura en Exactus?\n"
+        "- ¿Cómo registrar un cliente nuevo?\n"
+        "- ¿Qué dice el manual sobre facturación?\n"
+        "- ¿Cómo se manejan pedidos o inventario?"
+    )
+
+    st.sidebar.markdown("---")
 
     st.sidebar.text_input("API Base URL", value=API_BASE_URL, disabled=True)
+
+    st.sidebar.markdown("### Estado del backend")
+    health = get_health()
+    if health.get("status") == "ok":
+        st.sidebar.success(
+            f"API activa: {health.get('app', 'app')} {health.get('version', '')}"
+        )
+    else:
+        st.sidebar.error("No fue posible conectar con el backend")
+        st.sidebar.json(health)    
+
+    st.sidebar.title("Configuración")
+    st.sidebar.caption("La UI consume la API FastAPI ya levantada.")
 
     selected_provider = st.sidebar.selectbox(
         "Proveedor de IA",
@@ -68,34 +96,11 @@ def render_sidebar() -> None:
     st.session_state["selected_provider"] = selected_provider
     st.session_state["selected_model"] = selected_model
 
-    llm_provider = os.getenv("LLM_PROVIDER", "(desde backend)")
-    embedding_provider = os.getenv("EMBEDDING_PROVIDER", "(desde backend)")
-    ollama_llm_model = os.getenv("OLLAMA_LLM_MODEL", "(desde backend)")
-    ollama_embedding_model = os.getenv("OLLAMA_EMBEDDING_MODEL", "(desde backend)")
-
     st.sidebar.markdown("### Proveedores")
     st.sidebar.write(f"**LLM_PROVIDER:** {llm_provider}")
     st.sidebar.write(f"**EMBEDDING_PROVIDER:** {embedding_provider}")
     st.sidebar.write(f"**OLLAMA_LLM_MODEL:** {ollama_llm_model}")
     st.sidebar.write(f"**OLLAMA_EMBEDDING_MODEL:** {ollama_embedding_model}")
-
-    st.sidebar.markdown("### Estado del backend")
-    health = get_health()
-    if health.get("status") == "ok":
-        st.sidebar.success(
-            f"API activa: {health.get('app', 'app')} {health.get('version', '')}"
-        )
-    else:
-        st.sidebar.error("No fue posible conectar con el backend")
-        st.sidebar.json(health)
-
-    st.sidebar.markdown("### Sugerencias de prueba")
-    st.sidebar.markdown(
-        "- ¿Cómo se crea una factura en Exactus?\n"
-        "- ¿Cómo registrar un cliente nuevo?\n"
-        "- ¿Qué dice el manual sobre facturación?\n"
-        "- ¿Cómo se manejan pedidos o inventario?"
-    )
 
 
 
