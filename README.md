@@ -1,4 +1,5 @@
-# Exactus RAG Agent
+# Proyecto Challenge Alura Agente
+## Exactus RAG Agent
 
 Agente RAG en Python para consultar manuales PDF del ERP Exactus con FastAPI, LangChain, Chroma y un frontend en Streamlit.
 
