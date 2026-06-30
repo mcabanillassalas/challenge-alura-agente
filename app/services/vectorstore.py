@@ -19,10 +19,19 @@ def get_vectorstore() -> Chroma:
     )
 
 
-def build_vectorstore(chunks: list) -> Chroma:
+def build_vectorstore(
+    chunks: list,
+    provider_override: str | None = None,
+    model_override: str | None = None,
+    base_url_override: str | None = None,
+) -> Chroma:
     vectorstore = Chroma.from_documents(
         documents=chunks,
-        embedding=get_embeddings_model(),
+        embedding=get_embeddings_model(
+            provider_override=provider_override,
+            model_override=model_override,
+            base_url_override=base_url_override,
+        ),
         persist_directory=settings.chroma_persist_directory
     )
     return vectorstore

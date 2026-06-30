@@ -14,6 +14,12 @@ PROVIDER_OPTIONS = {
     "openai": ["gpt-4o-mini", "gpt-4.1-mini", "gpt-4.1"],
 }
 
+LOAD_PROVIDER_OPTIONS = {
+    "ollama": ["nomic-embed-text", "mxbai-embed-large"],
+    "gemini": ["text-embedding-004"],
+    "openai": ["text-embedding-3-small", "text-embedding-3-large"],
+}
+
 DEFAULT_PROVIDER = "gemini"
 
 
@@ -43,6 +49,35 @@ def ask_question(question: str, llm_provider: str, llm_model: str) -> dict[str, 
             "llm_model": llm_model,
         },
         timeout=180,
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+def upload_documents(
+    uploaded_files: list[Any], embedding_provider: str, embedding_model: str
+) -> dict[str, Any]:
+    files_payload = []
+    for uploaded_file in uploaded_files:
+        files_payload.append(
+            (
+                "files",
+                (
+                    uploaded_file.name,
+                    uploaded_file.getvalue(),
+                    uploaded_file.type or "application/octet-stream",
+                ),
+            )
+        )
+
+    response = requests.post(
+        f"{API_BASE_URL}/api/v1/ingest",
+        files=files_payload,
+        data={
+            "embedding_provider": embedding_provider,
+            "embedding_model": embedding_model,
+        },
+        timeout=600,
     )
     response.raise_for_status()
     return response.json()
@@ -79,6 +114,54 @@ def render_sidebar() -> None:
     else:
         st.sidebar.error("No fue posible conectar con el backend")
         st.sidebar.json(health)    
+
+    st.sidebar.markdown("### Carga de documentos")
+    st.sidebar.caption(
+        "Sube archivos PDF, CSV o DOCX. Se guardan en data/raw/exactus y se reindexan en data/processed."
+    )
+    load_embedding_provider = st.sidebar.selectbox(
+        "Proveedor de IA para carga",
+        options=["ollama", "gemini", "openai"],
+        index=0,
+        key="load_embedding_provider",
+    )
+    load_embedding_model = st.sidebar.selectbox(
+        "Modelo para carga",
+        options=LOAD_PROVIDER_OPTIONS[load_embedding_provider],
+        index=0,
+        key="load_embedding_model",
+    )
+    uploaded_files = st.sidebar.file_uploader(
+        "Selecciona uno o varios archivos",
+        type=["pdf", "csv", "docx"],
+        accept_multiple_files=True,
+    )
+    if st.sidebar.button(
+        "Guardar y generar índices",
+        disabled=not uploaded_files,
+        use_container_width=True,
+    ):
+        try:
+            with st.spinner("Guardando archivos y generando embeddings..."):
+                ingest_result = upload_documents(
+                    uploaded_files,
+                    load_embedding_provider,
+                    load_embedding_model,
+                )
+
+            saved_files = ingest_result.get("saved_files", [])
+            st.sidebar.success(
+                f"Carga completada con {load_embedding_provider}/{load_embedding_model}: {ingest_result.get('documents', 0)} documentos y {ingest_result.get('chunks', 0)} chunks."
+            )
+            if saved_files:
+                with st.sidebar.expander("Archivos guardados"):
+                    for file_info in saved_files:
+                        st.write(f"{file_info.get('filename')} -> {file_info.get('stored_as')}")
+        except requests.HTTPError as exc:
+            detail = exc.response.text if exc.response is not None else str(exc)
+            st.sidebar.error(f"Error al cargar documentos: {detail}")
+        except Exception as exc:
+            st.sidebar.error(f"Error al cargar documentos: {exc}")
 
     st.sidebar.title("Configuración")
     st.sidebar.caption("La UI consume la API FastAPI ya levantada.")

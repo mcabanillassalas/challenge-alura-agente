@@ -38,8 +38,12 @@ class CustomOllamaEmbeddings(Embeddings):
 
 
 
-def get_embeddings_model():
-    provider = settings.embedding_provider.lower().strip()
+def get_embeddings_model(
+    provider_override: str | None = None,
+    model_override: str | None = None,
+    base_url_override: str | None = None,
+):
+    provider = (provider_override or settings.embedding_provider).lower().strip()
 
     if provider == "openai":
         from langchain_openai import OpenAIEmbeddings
@@ -48,14 +52,25 @@ def get_embeddings_model():
             raise ValueError("OPENAI_API_KEY no está configurada")
 
         return OpenAIEmbeddings(
-            model=settings.openai_embedding_model,
+            model=model_override or settings.openai_embedding_model,
             api_key=settings.openai_api_key,
+        )
+
+    if provider == "gemini":
+        from langchain_google_genai import GoogleGenerativeAIEmbeddings
+
+        if not settings.gemini_api_key:
+            raise ValueError("GEMINI_API_KEY no está configurada")
+
+        return GoogleGenerativeAIEmbeddings(
+            model=model_override or "text-embedding-004",
+            google_api_key=settings.gemini_api_key,
         )
 
     if provider == "ollama":
         return CustomOllamaEmbeddings(
-            model=settings.ollama_embedding_model,
-            base_url=settings.ollama_base_url,
+            model=model_override or settings.ollama_embedding_model,
+            base_url=base_url_override or settings.ollama_base_url,
             timeout=180,
         )
 

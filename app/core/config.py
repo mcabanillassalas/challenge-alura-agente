@@ -19,8 +19,11 @@ class Settings(BaseSettings):
     ollama_llm_model: str = "qwen2.5-coder:7b"
     ollama_embedding_model: str = "nomic-embed-text"
 
-    chroma_persist_directory: str = "./chroma_db"
+    chroma_persist_directory: str = "./data/processed"
     data_path: str = "./data"
+    docs_path: str = "./data/raw/exactus"
+    chunk_size: int = 1200
+    chunk_overlap: int = 150
     top_k: int = 4
 
     model_config = SettingsConfigDict(

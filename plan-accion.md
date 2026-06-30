@@ -231,7 +231,7 @@ El seguimiento debe ser simple, medible y orientado a entregables, ya que el des
 - Selección de manuales Exactus.
 - Preparación de estructura del proyecto.
 - Lectura de PDFs.
-- Chunking.
+- C .
 - Creación de índice vectorial.
 
 ### Semana 2
