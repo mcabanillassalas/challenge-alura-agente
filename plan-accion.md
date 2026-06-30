@@ -73,16 +73,26 @@ Objetivo: extraer el contenido de los PDFs y dejarlo listo para indexación.
 - Normalizar texto extraído.
 - Dividir el contenido en fragmentos o chunks.
 - Incorporar metadatos como nombre del archivo y página.
+- Indexar de forma incremental los archivos recién cargados desde el frontend.
+- Permitir reindexación manual desde el frontend con el mismo proveedor y modelo de carga.
+- Agregar metadatos de manual para favorecer la recuperación por tema y por módulo.
+- Mantener el mapeo temático editable en `app/core/manual_routing.py`.
+- Exponer el mapeo temático en `app/core/manual_routing.yml` para facilitar ajustes sin tocar el código.
 
 ### Entregables
 
 - Script `scripts/ingest.py`.
 - Servicios de carga documental y fragmentación.
 - Datos procesados listos para embeddings.
+- Ruta de carga que no reconstruye todo el corpus en cada subida.
+- Acción de reindexación manual reutilizando el proveedor y modelo seleccionados para la carga.
+- Recuperación que prioriza el manual correcto cuando la consulta apunta a usuarios, nómina, facturación u otro módulo específico.
+- Reglas de enrutamiento centralizadas para extender nuevos temas o manuales sin tocar la lógica del RAG.
+- Reglas de enrutamiento editables desde un archivo YAML dedicado.
 
 ### Criterio de cierre
 
-La fase se considera cerrada cuando los PDFs se procesan sin errores importantes y el sistema conserva trazabilidad por documento y página.
+La fase se considera cerrada cuando los PDFs se procesan sin errores importantes, el sistema conserva trazabilidad por documento y página, la carga del frontend reindexa solo los archivos nuevos, existe una opción explícita de reindexación manual y la recuperación favorece el manual más específico según el tema consultado.
 
 ## Fase 3. Índice vectorial y recuperación
 
@@ -136,6 +146,7 @@ Objetivo: exponer el agente mediante una API local y verificar estabilidad.
 - Agregar validación de entrada.
 - Incorporar logging básico.
 - Ejecutar pruebas manuales y smoke tests.
+- Mantener el frontend y la API alineados con la carga incremental.
 
 ### Entregables
 
@@ -145,7 +156,7 @@ Objetivo: exponer el agente mediante una API local y verificar estabilidad.
 
 ### Criterio de cierre
 
-La fase se considera cerrada cuando el servicio puede levantarse localmente, recibir preguntas y responder de forma estable.
+La fase se considera cerrada cuando el servicio puede levantarse localmente, recibir preguntas y responder de forma estable, y la carga de documentos no provoca reconstrucciones completas innecesarias.
 
 ## Fase 6. Documentación del proyecto
 

@@ -83,6 +83,19 @@ def upload_documents(
     return response.json()
 
 
+def reindex_documents(embedding_provider: str, embedding_model: str) -> dict[str, Any]:
+    response = requests.post(
+        f"{API_BASE_URL}/api/v1/reindex",
+        data={
+            "embedding_provider": embedding_provider,
+            "embedding_model": embedding_model,
+        },
+        timeout=600,
+    )
+    response.raise_for_status()
+    return response.json()
+
+
 
 def render_sidebar() -> None:
     # st.sidebar.text_input("API Base URL", value=API_BASE_URL, disabled=True)
@@ -162,6 +175,28 @@ def render_sidebar() -> None:
             st.sidebar.error(f"Error al cargar documentos: {detail}")
         except Exception as exc:
             st.sidebar.error(f"Error al cargar documentos: {exc}")
+
+    if st.sidebar.button(
+        "Reindexar documentos",
+        use_container_width=True,
+    ):
+        try:
+            with st.spinner(
+                f"Reindexando documentos con {load_embedding_provider}/{load_embedding_model}..."
+            ):
+                reindex_result = reindex_documents(
+                    load_embedding_provider,
+                    load_embedding_model,
+                )
+
+            st.sidebar.success(
+                f"Reindexación completada con {load_embedding_provider}/{load_embedding_model}: {reindex_result.get('documents', 0)} documentos y {reindex_result.get('chunks', 0)} chunks."
+            )
+        except requests.HTTPError as exc:
+            detail = exc.response.text if exc.response is not None else str(exc)
+            st.sidebar.error(f"Error al reindexar documentos: {detail}")
+        except Exception as exc:
+            st.sidebar.error(f"Error al reindexar documentos: {exc}")
 
     st.sidebar.title("Configuración")
     st.sidebar.caption("La UI consume la API FastAPI ya levantada.")

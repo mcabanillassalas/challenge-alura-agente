@@ -16,6 +16,11 @@ El objetivo del challenge es demostrar un flujo completo: cargar documentos, gen
 - La API principal está en FastAPI, en `app/main.py`.
 - Ya existe soporte para cambiar proveedor y modelo tanto en el chat como en la carga.
 - La carga de archivos permite PDF, CSV y DOCX.
+- La carga por frontend indexa solo los archivos recién subidos; la reconstrucción completa queda para `python -m scripts.rebuild_index`.
+- Debajo de la carga de documentos existe una acción de reindexación que usa el mismo proveedor y modelo seleccionados para la carga.
+- La ingesta agrega metadatos del manual (`manual_code`, `manual_family`, `document_title`) y la recuperación prioriza el manual correcto según el tema de la consulta.
+- El mapeo temático editable vive en `app/core/manual_routing.py`.
+- El mapeo temático editable se guarda en `app/core/manual_routing.yml`.
 
 ## Estructura importante
 
@@ -47,12 +52,24 @@ Soporta:
 - Gemini
 - OpenAI
 
+Gemini requiere `langchain-google-genai==2.1.12` en el entorno del proyecto para mantener compatibilidad con el stack de LangChain usado aquí.
+
 ### Carga / embeddings
 
 La sección de carga tiene su propio selector de proveedor y modelo.
 Ese selector existe para que la carga se haga normalmente antes de producción y, solo si es necesario, también en producción.
 
 Por defecto, la carga usa Ollama.
+
+La recuperación también usa metadatos del documento para priorizar el manual correcto cuando la consulta apunta a un tema específico, por ejemplo usuarios, nómina o facturación.
+
+Si necesitas agregar nuevas referencias, edita `app/core/manual_routing.py` y añade el código del manual con sus palabras clave.
+
+Si prefieres mantener las reglas fuera del código, edita `app/core/manual_routing.yml`.
+
+Como punto de partida, puedes añadir sinónimos de negocio como "alta de usuarios", "asignar permisos", "kardex" o "conciliación bancaria" para orientar mejor cada módulo.
+
+El archivo YAML también admite pesos por palabra clave, así las frases más específicas pueden ganar prioridad frente a términos genéricos.
 
 ## Variables de entorno relevantes
 
@@ -90,13 +107,23 @@ streamlit run frontend/streamlit_app.py
 
 La ingesta actual se hace por la API del frontend o por script.
 
+La subida desde el frontend procesa solo los archivos nuevos y evita reconstruir todo el corpus en cada request.
+
+Debajo de la carga de documentos hay una opción de reindexación que reutiliza el mismo proveedor y modelo configurados para la carga.
+
+La ingesta añade metadatos como `manual_code` y `document_title` para ayudar a que la recuperación favorezca el manual más específico.
+
 Script manual:
 
 ```powershell
 python -m scripts.ingest
 ```
 
-Si necesitas reconstruir desde cero el índice y volver a procesar los documentos, usa el script de rebuild.
+Si necesitas reconstruir desde cero el índice y volver a procesar los documentos, usa el script de rebuild:
+
+```powershell
+python -m scripts.rebuild_index
+```
 
 ## Endpoints útiles
 
@@ -106,6 +133,7 @@ Si necesitas reconstruir desde cero el índice y volver a procesar los documento
 
 ## Reglas de trabajo
 
+- Siempre se debe actualizar este archivo cuando se realice alguna modificacion relevante en el proyecto. Asimismo debe actualizarse README.md y plan-accion.md.
 - No tocar archivos fuera de `agente-alura-rag`.
 - Mantener el `.gitignore` actualizado para no versionar el entorno virtual ni artefactos locales.
 - No sobrescribir `data/processed/` manualmente salvo cuando se quiera reconstruir el índice.

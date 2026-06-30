@@ -1,7 +1,44 @@
 from app.core.config import settings
+from app.core.manual_routing import infer_manual_code, normalize_text
 from app.core.prompts import SYSTEM_PROMPT
 from app.schemas.ask import AskResponse, SourceItem
 from app.services.vectorstore import get_vectorstore
+
+
+def _tokenize(text: str) -> set[str]:
+    normalized = _normalize_text(text)
+    tokens = set(normalized.replace("/", " ").replace("-", " ").split())
+    return {token for token in tokens if len(token) > 2}
+
+
+def _infer_manual_code(question: str) -> str | None:
+    return infer_manual_code(question)
+
+
+def _rank_documents(question: str, docs_with_scores):
+    question_tokens = _tokenize(question)
+    target_manual_code = _infer_manual_code(question)
+
+    if target_manual_code:
+        filtered_docs = [
+            item for item in docs_with_scores if item[0].metadata.get("manual_code") == target_manual_code
+        ]
+        if filtered_docs:
+            docs_with_scores = filtered_docs
+
+    ranked_docs = []
+    for doc, distance in docs_with_scores:
+        document_text = f"{doc.metadata.get('document_title', '')} {doc.page_content[:1200]}"
+        document_tokens = _tokenize(document_text)
+        overlap = len(question_tokens & document_tokens)
+        embedding_score = 1 / (1 + float(distance))
+        title_tokens = _tokenize(doc.metadata.get("document_title", ""))
+        title_overlap = len(question_tokens & title_tokens)
+        score = embedding_score + (0.12 * overlap) + (0.18 * title_overlap)
+        ranked_docs.append((score, doc))
+
+    ranked_docs.sort(key=lambda item: item[0], reverse=True)
+    return [doc for _, doc in ranked_docs]
 
 
 def _get_llm(provider_override: str | None = None, model_override: str | None = None):
@@ -50,8 +87,9 @@ def answer_question(
     llm_model: str | None = None,
 ) -> AskResponse:
     vectorstore = get_vectorstore()
-    retriever = vectorstore.as_retriever(search_kwargs={"k": settings.top_k})
-    docs = retriever.invoke(question)
+    fetch_k = max(settings.top_k * 4, 8)
+    docs_with_scores = vectorstore.similarity_search_with_score(question, k=fetch_k)
+    docs = _rank_documents(question, docs_with_scores)[: settings.top_k]
 
     if not docs:
         return AskResponse(

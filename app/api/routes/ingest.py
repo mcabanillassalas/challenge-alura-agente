@@ -4,7 +4,11 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 
 from app.schemas.ingest import IngestResponse, SavedFileItem
 from app.services.document_loader import SUPPORTED_EXTENSIONS
-from app.services.ingestion import rebuild_vector_index, save_uploaded_document
+from app.services.ingestion import (
+    index_uploaded_files,
+    rebuild_vector_index,
+    save_uploaded_document,
+)
 
 router = APIRouter(tags=["ingest"])
 
@@ -19,6 +23,7 @@ async def ingest_documents(
         raise HTTPException(status_code=400, detail="No se enviaron archivos")
 
     saved_files: list[SavedFileItem] = []
+    saved_paths: list[Path] = []
 
     try:
         for upload_file in files:
@@ -36,6 +41,7 @@ async def ingest_documents(
                 raise ValueError(f"El archivo {filename} está vacío")
 
             saved_path = save_uploaded_document(filename, content)
+            saved_paths.append(saved_path)
             saved_files.append(
                 SavedFileItem(
                     filename=filename,
@@ -44,7 +50,8 @@ async def ingest_documents(
                 )
             )
 
-        summary = rebuild_vector_index(
+        summary = index_uploaded_files(
+            saved_paths,
             embedding_provider=embedding_provider,
             embedding_model=embedding_model,
         )
@@ -60,3 +67,25 @@ async def ingest_documents(
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Error al procesar archivos: {exc}") from exc
+
+
+@router.post("/reindex", response_model=IngestResponse)
+def reindex_documents(
+    embedding_provider: str = Form("ollama"),
+    embedding_model: str = Form("nomic-embed-text"),
+) -> IngestResponse:
+    try:
+        summary = rebuild_vector_index(
+            embedding_provider=embedding_provider,
+            embedding_model=embedding_model,
+        )
+        return IngestResponse(
+            status="ok",
+            saved_files=[],
+            documents=summary["documents"],
+            chunks=summary["chunks"],
+            raw_path=summary["raw_path"],
+            processed_path=summary["processed_path"],
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error al reindexar archivos: {exc}") from exc

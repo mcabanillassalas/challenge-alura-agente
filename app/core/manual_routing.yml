@@ -1,0 +1,177 @@
+manual_code_family:
+  AS: administracion_sistema
+  RH: recursos_humanos
+  FA: facturacion
+  CP: cuentas_pagar
+  CN: control_nominas
+  CI: control_inventarios
+  CG: contabilidad_general
+  CC: cuentas_cobrar
+  CB: control_bancario
+
+query_routing_rules:
+  AS:
+    - keyword: usuario
+      weight: 1
+    - keyword: usuarios
+      weight: 1
+    - keyword: crear usuario
+      weight: 3
+    - keyword: creacion de usuario
+      weight: 3
+    - keyword: creacion de usuarios
+      weight: 3
+    - keyword: alta de usuario
+      weight: 4
+    - keyword: alta de usuarios
+      weight: 4
+    - keyword: baja de usuario
+      weight: 4
+    - keyword: baja de usuarios
+      weight: 4
+    - keyword: administracion del sistema
+      weight: 5
+    - keyword: sistema de seguridad
+      weight: 4
+    - keyword: seguridad
+      weight: 2
+    - keyword: permiso
+      weight: 1
+    - keyword: permisos
+      weight: 1
+    - keyword: rol
+      weight: 1
+    - keyword: roles
+      weight: 1
+    - keyword: asignar permiso
+      weight: 4
+    - keyword: asignacion de permisos
+      weight: 5
+    - keyword: crear rol
+      weight: 3
+    - keyword: editar rol
+      weight: 3
+  RH:
+    - keyword: empleado
+      weight: 1
+    - keyword: empleados
+      weight: 1
+    - keyword: recursos humanos
+      weight: 4
+    - keyword: vacacion
+      weight: 1
+    - keyword: vacaciones
+      weight: 1
+    - keyword: nomina
+      weight: 2
+    - keyword: salario
+      weight: 2
+    - keyword: mantenimiento de empleados
+      weight: 4
+    - keyword: ficha de empleado
+      weight: 4
+  FA:
+    - keyword: factura
+      weight: 2
+    - keyword: facturacion
+      weight: 3
+    - keyword: facturas
+      weight: 2
+    - keyword: cliente
+      weight: 1
+    - keyword: clientes
+      weight: 1
+    - keyword: cobrar factura
+      weight: 4
+    - keyword: emitir factura
+      weight: 4
+  CI:
+    - keyword: inventario
+      weight: 2
+    - keyword: inventarios
+      weight: 2
+    - keyword: bodega
+      weight: 1
+    - keyword: existencia
+      weight: 1
+    - keyword: existencias
+      weight: 1
+    - keyword: kardex
+      weight: 4
+    - keyword: movimiento de inventario
+      weight: 4
+  CG:
+    - keyword: contabilidad
+      weight: 2
+    - keyword: asiento
+      weight: 1
+    - keyword: asientos
+      weight: 1
+    - keyword: mayor
+      weight: 1
+    - keyword: diario
+      weight: 1
+    - keyword: balance general
+      weight: 4
+    - keyword: libro mayor
+      weight: 4
+  CP:
+    - keyword: pago
+      weight: 1
+    - keyword: pagos
+      weight: 1
+    - keyword: proveedor
+      weight: 1
+    - keyword: proveedores
+      weight: 1
+    - keyword: cuenta por pagar
+      weight: 4
+    - keyword: cuentas por pagar
+      weight: 4
+    - keyword: registrar pago
+      weight: 4
+  CC:
+    - keyword: cobro
+      weight: 1
+    - keyword: cobros
+      weight: 1
+    - keyword: cliente
+      weight: 1
+    - keyword: clientes
+      weight: 1
+    - keyword: cuenta por cobrar
+      weight: 4
+    - keyword: cuentas por cobrar
+      weight: 4
+    - keyword: registrar cobro
+      weight: 4
+  CB:
+    - keyword: banco
+      weight: 1
+    - keyword: bancario
+      weight: 1
+    - keyword: cheque
+      weight: 1
+    - keyword: cheques
+      weight: 1
+    - keyword: conciliacion
+      weight: 2
+    - keyword: conciliacion bancaria
+      weight: 4
+    - keyword: movimiento bancario
+      weight: 4
+  CN:
+    - keyword: nomina
+      weight: 2
+    - keyword: planilla
+      weight: 2
+    - keyword: salario
+      weight: 2
+    - keyword: empleado
+      weight: 1
+    - keyword: empleados
+      weight: 1
+    - keyword: calculo de nomina
+      weight: 4
+    - keyword: proceso de planilla
+      weight: 4

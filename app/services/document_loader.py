@@ -7,15 +7,28 @@ from docx import Document as DocxDocument
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
 
+from app.core.manual_routing import get_manual_family
+
 
 SUPPORTED_EXTENSIONS = {".pdf", ".csv", ".docx"}
+
+
+def _manual_metadata(file_path: Path) -> dict[str, str]:
+    stem = file_path.stem
+    code = stem.split("_", 1)[0].upper()
+    return {
+        "source": file_path.name,
+        "document_title": stem.replace("_", " "),
+        "manual_code": code,
+        "manual_family": get_manual_family(code),
+    }
 
 
 def _load_pdf_document(file_path: Path) -> list[Document]:
     loader = PyPDFLoader(str(file_path))
     pages = loader.load()
     for page in pages:
-        page.metadata["source"] = file_path.name
+        page.metadata.update(_manual_metadata(file_path))
         page.metadata["file_type"] = "pdf"
     return pages
 
@@ -42,7 +55,7 @@ def _load_csv_document(file_path: Path) -> list[Document]:
                 Document(
                     page_content=row_content,
                     metadata={
-                        "source": file_path.name,
+                        **_manual_metadata(file_path),
                         "page": row_number,
                         "row": row_number,
                         "file_type": "csv",
@@ -77,7 +90,7 @@ def _load_docx_document(file_path: Path) -> list[Document]:
         Document(
             page_content=content,
             metadata={
-                "source": file_path.name,
+                **_manual_metadata(file_path),
                 "page": 1,
                 "file_type": "docx",
             },
@@ -119,6 +132,22 @@ def load_documents_from_path(docs_path: str) -> list[Document]:
     documents: list[Document] = []
     for file_path in supported_files:
         documents.extend(_load_supported_document(file_path))
+
+    return documents
+
+
+def load_documents_from_files(file_paths: list[Path]) -> list[Document]:
+    documents: list[Document] = []
+
+    for file_path in sorted(file_paths):
+        if not file_path.exists() or not file_path.is_file():
+            continue
+        if file_path.suffix.lower() not in SUPPORTED_EXTENSIONS:
+            continue
+        documents.extend(_load_supported_document(file_path))
+
+    if not documents:
+        raise FileNotFoundError("No se encontraron documentos válidos para indexar")
 
     return documents
 
