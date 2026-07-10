@@ -127,6 +127,7 @@ Tu instancia gratuita `VM.Standard.E2.1.Micro` cuenta únicamente con **1 GB de 
 Para solucionar esto de manera definitiva, debemos configurar **4 GB de memoria de intercambio (SWAP)** en el disco de estado sólido:
 
 En la terminal de tu servidor (SSH):
+
 ```bash
 # 1. Crear un archivo vacío de 4 GB para el Swap
 sudo fallocate -l 4G /swapfile
@@ -164,6 +165,7 @@ cd challenge-alura-rag
 Dado que la carpeta del entorno virtual local `env3.11` no debe copiarse al servidor (pesa mucho y no es compatible), la mejor estrategia es crear un archivo `.zip` excluyéndola, subirlo por SCP y extraerlo en el servidor.
 
 **1. Desde tu PowerShell local (Windows), comprime el proyecto excluyendo `env3.11` y súbelo:**
+
 ```powershell
 $sourceFolder = "D:\DevALURA\challenge-alura-agente\agente-alura-rag"
 $instanceIP = "130.162.58.58"
@@ -177,6 +179,7 @@ scp -i $keyPath "D:\DevALURA\challenge-alura-agente\proyecto.zip" ubuntu@${insta
 ```
 
 **2. Desde la terminal SSH de tu servidor (Ubuntu), instala unzip y descomprime:**
+
 ```bash
 # Instalar unzip
 sudo apt install -y unzip
@@ -261,6 +264,7 @@ La cuenta gratuita de Gemini limita el número de solicitudes de embedding a **1
 Puedes elegir entre procesar todo el corpus de manera incremental o archivo por archivo:
 
 ### Opción A: Ingesta completa incremental
+
 ```bash
 source venv/bin/activate
 cd /home/ubuntu/agente-alura-rag
@@ -268,13 +272,16 @@ python -m scripts.ingest_incremental
 ```
 
 ### Opción B: Ingesta de un único PDF (Recomendado para control de progreso)
+
 Si quieres procesar los PDFs uno por uno:
+
 ```bash
 source venv/bin/activate
 cd /home/ubuntu/agente-alura-rag
 python -m scripts.ingest_pdf_incremental NOMBRE_DEL_ARCHIVO.pdf
 ```
-*(Por ejemplo: `python -m scripts.ingest_pdf_incremental CI_Manual_Usuario_Control_Inventarios.pdf`)*
+
+_(Por ejemplo: `python -m scripts.ingest_pdf_incremental CI_Manual_Usuario_Control_Inventarios.pdf`)_
 
 ---
 

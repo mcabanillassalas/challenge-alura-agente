@@ -30,7 +30,8 @@ def main():
             print(f"   -> Dividido en {len(chunks)} chunks.")
             
             # Indexar en sub-lotes pequeños para respetar el límite de cuota (100 RPM)
-            sub_batch_size = 100
+            # 20 chunks por lote con 3s de espera = ~15 a 20 peticiones por minuto (muy seguro)
+            sub_batch_size = 20
             for j in range(0, len(chunks), sub_batch_size):
                 sub_batch = chunks[j : j + sub_batch_size]
                 success = False
@@ -42,15 +43,17 @@ def main():
                         print(f"   -> Indexando chunks {j} a {min(j + sub_batch_size, len(chunks))}...")
                         build_vectorstore(sub_batch)
                         success = True
-                        # Pausa corta entre lotes
-                        time.sleep(2)
+                        # Pausa de 3 segundos entre lotes para mantenernos bajo el límite de RPM
+                        time.sleep(3)
                     except Exception as e:
                         err_str = str(e)
                         if "429" in err_str or "Quota exceeded" in err_str:
                             retries -= 1
-                            print(f"   -> [429 Quota Exceeded] Esperando {wait_time}s para reintentar ({retries} reintentos restantes)...")
-                            time.sleep(wait_time)
-                            wait_time *= 2  # Backoff exponencial
+                            # Limitar el tiempo máximo de espera a 60s para evitar que SSH se desconecte por inactividad
+                            actual_wait = min(wait_time, 60)
+                            print(f"   -> [429 Quota Exceeded] Esperando {actual_wait}s para reintentar ({retries} reintentos restantes)...")
+                            time.sleep(actual_wait)
+                            wait_time *= 2  # Backoff exponencial para el siguiente intento
                         else:
                             raise e
                 
