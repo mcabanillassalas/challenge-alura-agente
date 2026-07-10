@@ -77,14 +77,11 @@ Si no tienes una clave SSH configurada en tu máquina local, puedes crear un par
 
 ## Paso 2: Conectarte a la instancia
 
-Desde PowerShell:
+Desde tu PowerShell local en Windows, utiliza la IP pública de tu instancia (`130.162.58.58`) y la ruta real de tu clave privada:
 
 ```powershell
-$instanceIP = "Tu.IP.Publica.Aqui"
-# Si usaste la ruta de generación por defecto:
-$keyPath = "$HOME\.ssh\id_rsa_oci"
-# O especifica tu ruta personalizada si la guardaste en otro lugar:
-# $keyPath = "C:\ruta\a\clave.key"
+$instanceIP = "130.162.58.58"
+$keyPath = "D:\DevALURA\challenge-alura-agente\ssh-keys\ssh-key-2026-07-10.key"
 ssh -i $keyPath ubuntu@$instanceIP
 ```
 
@@ -123,7 +120,36 @@ python3.11 --version
 
 ---
 
-## Paso 4: Subir o clonar el proyecto
+## Paso 4: Configurar memoria de intercambio (SWAP) (Crítico para OCI Free Tier)
+
+Tu instancia gratuita `VM.Standard.E2.1.Micro` cuenta únicamente con **1 GB de RAM**. El procesamiento de archivos PDF y la generación de embeddings en Python consumen mucha memoria y harán que la máquina virtual colapse (provocando desconexiones SSH del tipo `Connection reset`).
+
+Para solucionar esto de manera definitiva, debemos configurar **4 GB de memoria de intercambio (SWAP)** en el disco de estado sólido:
+
+En la terminal de tu servidor (SSH):
+```bash
+# 1. Crear un archivo vacío de 4 GB para el Swap
+sudo fallocate -l 4G /swapfile
+
+# 2. Configurar los permisos correctos
+sudo chmod 600 /swapfile
+
+# 3. Formatear el archivo como área de intercambio
+sudo mkswap /swapfile
+
+# 4. Activar el Swap en el sistema
+sudo swapon /swapfile
+
+# 5. Hacer que el Swap se monte automáticamente al iniciar el servidor
+echo '/swapfile none swap sw 0 0' | sudo tee -a /etc/fstab
+
+# 6. Verificar que la memoria de intercambio esté activa (deberías ver "Swap: 4.0Gi")
+free -h
+```
+
+---
+
+## Paso 5: Subir o clonar el proyecto
 
 ### Opción A: clonar desde GitHub
 
@@ -133,25 +159,38 @@ git clone https://github.com/TU_USUARIO/challenge-alura-agente.git
 cd challenge-alura-rag
 ```
 
-### Opción B: subir por SCP
+### Opción B: subir por SCP (Compresión ZIP recomendada)
 
-Desde tu PowerShell local:
+Dado que la carpeta del entorno virtual local `env3.11` no debe copiarse al servidor (pesa mucho y no es compatible), la mejor estrategia es crear un archivo `.zip` excluyéndola, subirlo por SCP y extraerlo en el servidor.
 
+**1. Desde tu PowerShell local (Windows), comprime el proyecto excluyendo `env3.11` y súbelo:**
 ```powershell
 $sourceFolder = "D:\DevALURA\challenge-alura-agente\agente-alura-rag"
-$instanceIP = "Tu.IP.Publica.Aqui"
-$keyPath = "$HOME\.ssh\id_rsa_oci"
+$instanceIP = "130.162.58.58"
+$keyPath = "D:\DevALURA\challenge-alura-agente\ssh-keys\ssh-key-2026-07-10.key"
 
-# Crear primero el directorio destino remoto para evitar fallos de copia
-ssh -i $keyPath ubuntu@$instanceIP "mkdir -p /home/ubuntu/agente-alura-rag"
+# Comprimir el proyecto local excluyendo env3.11
+Get-ChildItem -Path $sourceFolder -Exclude "env3.11" | Compress-Archive -DestinationPath "D:\DevALURA\challenge-alura-agente\proyecto.zip" -Force
 
-# Subir los archivos recursivamente
-scp -r -i $keyPath "$sourceFolder\*" "ubuntu@${instanceIP}:/home/ubuntu/agente-alura-rag/"
+# Subir el archivo zip al servidor
+scp -i $keyPath "D:\DevALURA\challenge-alura-agente\proyecto.zip" ubuntu@${instanceIP}:/home/ubuntu/
+```
+
+**2. Desde la terminal SSH de tu servidor (Ubuntu), instala unzip y descomprime:**
+```bash
+# Instalar unzip
+sudo apt install -y unzip
+
+# Descomprimir en la carpeta del agente
+unzip /home/ubuntu/proyecto.zip -d /home/ubuntu/agente-alura-rag
+
+# Eliminar el archivo zip temporal
+rm /home/ubuntu/proyecto.zip
 ```
 
 ---
 
-## Paso 5: Crear el entorno virtual
+## Paso 6: Crear el entorno virtual
 
 En la instancia remota:
 
@@ -172,35 +211,39 @@ pip install -r requirements.txt
 
 ---
 
-## Paso 6: Configurar variables de entorno
+## Paso 7: Configurar variables de entorno
 
 ```bash
 nano .env
 ```
 
-Ejemplo:
+Ejemplo real optimizado para Gemini en OCI:
 
 ```env
-LLM_PROVIDER=openai
-EMBEDDING_PROVIDER=openai
+APP_NAME="Exactus RAG Agent"
+APP_ENV=production
+APP_HOST=0.0.0.0
+APP_PORT=8000
+LOG_LEVEL=INFO
 
-OPENAI_API_KEY=sk-...
-OPENAI_CHAT_MODEL=gpt-3.5-turbo
-OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+# Usamos Gemini para evitar el consumo de RAM de Ollama local
+LLM_PROVIDER=gemini
+EMBEDDING_PROVIDER=gemini
+
+# Clave de API de Gemini y modelo de chat
+GEMINI_API_KEY=AQ.Ab8RN6K9Mu6a8Xfm0nMGB1Ts_FyB9jtdxadIPfNBn7T7500NUg
+GEMINI_CHAT_MODEL=gemini-2.5-flash
 
 CHROMA_PERSIST_DIRECTORY=data/processed
 DOCS_PATH=data/raw/exactus
-TOP_K=5
-CHUNK_SIZE=1000
-CHUNK_OVERLAP=100
-
-API_HOST=0.0.0.0
-API_PORT=8000
+TOP_K=4
+CHUNK_SIZE=1200
+CHUNK_OVERLAP=150
 ```
 
 ---
 
-## Paso 7: Copiar los documentos
+## Paso 8: Copiar los documentos
 
 ```bash
 mkdir -p /home/ubuntu/agente-alura-rag/data/raw/exactus
@@ -211,17 +254,31 @@ También puedes subir tus PDFs por SCP.
 
 ---
 
-## Paso 8: Ingestar documentos
+## Paso 9: Ingestar documentos (Evitando límites de cuota)
 
+La cuenta gratuita de Gemini limita el número de solicitudes de embedding a **100 por minuto (100 RPM)**. Para evitar que el proceso falle por error `429 Quota Exceeded`, el proyecto incluye un script de **ingesta incremental** que divide los documentos en sub-lotes pequeños e incluye reintentos automáticos con espera (backoff exponencial).
+
+Puedes elegir entre procesar todo el corpus de manera incremental o archivo por archivo:
+
+### Opción A: Ingesta completa incremental
 ```bash
 source venv/bin/activate
 cd /home/ubuntu/agente-alura-rag
-python -m scripts.ingest
+python -m scripts.ingest_incremental
 ```
+
+### Opción B: Ingesta de un único PDF (Recomendado para control de progreso)
+Si quieres procesar los PDFs uno por uno:
+```bash
+source venv/bin/activate
+cd /home/ubuntu/agente-alura-rag
+python -m scripts.ingest_pdf_incremental NOMBRE_DEL_ARCHIVO.pdf
+```
+*(Por ejemplo: `python -m scripts.ingest_pdf_incremental CI_Manual_Usuario_Control_Inventarios.pdf`)*
 
 ---
 
-## Paso 9: Ejecutar la API
+## Paso 10: Ejecutar la API
 
 ```bash
 source venv/bin/activate
@@ -231,7 +288,7 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 ---
 
-## Paso 10: Configurar firewall y seguridad
+## Paso 11: Configurar firewall y seguridad
 
 Para acceder a la API desde internet, debes abrir el puerto 8000 tanto en la red de Oracle Cloud como en la máquina virtual (Ubuntu).
 
@@ -272,23 +329,23 @@ sudo ufw status
 
 ---
 
-## Paso 11: Validar el despliegue
+## Paso 12: Validar el despliegue
 
 ```bash
-curl http://TU_IP_PUBLICA:8000/health
+curl http://130.162.58.58:8000/health
 ```
 
 Prueba una pregunta:
 
 ```bash
-curl -X POST http://TU_IP_PUBLICA:8000/api/v1/ask \
+curl -X POST http://130.162.58.58:8000/api/v1/ask \
   -H "Content-Type: application/json" \
-  -d '{"question":"¿Cómo crear un usuario en Exactus?","llm_provider":"openai","llm_model":"gpt-3.5-turbo"}'
+  -d '{"question":"¿Cómo crear un usuario en Exactus?","llm_provider":"gemini","llm_model":"gemini-2.5-flash"}'
 ```
 
 ---
 
-## Paso 12: Ejecutar como servicio systemd (recomendado)
+## Paso 13: Ejecutar como servicio systemd (recomendado)
 
 Para que el backend corra en segundo plano y se inicie automáticamente con el sistema:
 
@@ -365,14 +422,15 @@ CHUNK_OVERLAP=50
 
 ## Checklist final
 
-- [ ] Instancia OCI creada
-- [ ] SSH funcionando
-- [ ] Python 3.11 instalado
-- [ ] Proyecto subido o clonado
-- [ ] `.env` configurado
-- [ ] PDFs cargados
-- [ ] API ejecutándose en puerto 8000
-- [ ] Firewall abierto
-- [ ] Endpoint `/health` respondiendo
+- [ ] Instancia OCI creada (`130.162.58.58`)
+- [ ] SSH funcionando con clave privada
+- [ ] Python 3 instalado (Opción A: Python 3.12 por defecto en Ubuntu 24.04)
+- [ ] Memoria Swap de 4 GB configurada
+- [ ] Proyecto subido y descomprimido sin `env3.11`
+- [ ] `.env` configurado para usar Gemini (`gemini-embedding-2`)
+- [ ] PDFs cargados e indexados de forma incremental
+- [ ] API ejecutándose en el puerto 8000
+- [ ] Firewall de OCI (Subnet Security List) e `iptables` abiertos para el puerto 8000
+- [ ] Endpoint `/health` respondiendo en `http://130.162.58.58:8000/health`
 
-¡Listo para usar el despliegue sin Docker! 🎉
+¡Listo para usar el despliegue sin Docker en OCI! 🎉
