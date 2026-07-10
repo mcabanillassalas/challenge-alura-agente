@@ -29,9 +29,9 @@ def main():
             chunks = split_documents(documents)
             print(f"   -> Dividido en {len(chunks)} chunks.")
             
-            # Indexar en sub-lotes pequeños para respetar el límite de cuota (100 RPM)
-            # 20 chunks por lote con 3s de espera = ~15 a 20 peticiones por minuto (muy seguro)
-            sub_batch_size = 20
+            # Indexar en sub-lotes de 100 chunks para optimizar cuota diaria (1 request por lote)
+            # 10s de espera entre lotes = 6 peticiones por minuto (RPM), completamente seguro para la cuota
+            sub_batch_size = 100
             for j in range(0, len(chunks), sub_batch_size):
                 sub_batch = chunks[j : j + sub_batch_size]
                 success = False
@@ -43,8 +43,8 @@ def main():
                         print(f"   -> Indexando chunks {j} a {min(j + sub_batch_size, len(chunks))}...")
                         build_vectorstore(sub_batch)
                         success = True
-                        # Pausa de 3 segundos entre lotes para mantenernos bajo el límite de RPM
-                        time.sleep(3)
+                        # Pausa de 10 segundos entre lotes para mantenernos bajo el límite de RPM
+                        time.sleep(10)
                     except Exception as e:
                         err_str = str(e)
                         if "429" in err_str or "Quota exceeded" in err_str:
