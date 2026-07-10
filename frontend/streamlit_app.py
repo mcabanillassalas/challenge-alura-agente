@@ -16,7 +16,7 @@ PROVIDER_OPTIONS = {
 
 LOAD_PROVIDER_OPTIONS = {
     "ollama": ["nomic-embed-text", "mxbai-embed-large"],
-    "gemini": ["text-embedding-004"],
+    "gemini": ["gemini-embedding-2"],
     "openai": ["text-embedding-3-small", "text-embedding-3-large"],
 }
 

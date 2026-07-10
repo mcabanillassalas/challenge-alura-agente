@@ -63,7 +63,7 @@ def get_embeddings_model(
             raise ValueError("GEMINI_API_KEY no está configurada")
 
         return GoogleGenerativeAIEmbeddings(
-            model=model_override or "text-embedding-004",
+            model=model_override or "gemini-embedding-2",
             google_api_key=settings.gemini_api_key,
         )
 

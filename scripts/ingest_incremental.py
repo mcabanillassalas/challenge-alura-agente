@@ -1,5 +1,6 @@
 import os
 import shutil
+import time
 from pathlib import Path
 from app.core.config import settings
 from app.services.document_loader import load_documents_from_files
@@ -26,9 +27,36 @@ def main():
             # Cargar un solo documento
             documents = load_documents_from_files([pdf_file])
             chunks = split_documents(documents)
+            print(f"   -> Dividido en {len(chunks)} chunks.")
             
-            # Indexar e incorporar al vectorstore existente
-            build_vectorstore(chunks)
+            # Indexar en sub-lotes pequeños para respetar el límite de cuota (100 RPM)
+            sub_batch_size = 100
+            for j in range(0, len(chunks), sub_batch_size):
+                sub_batch = chunks[j : j + sub_batch_size]
+                success = False
+                retries = 5
+                wait_time = 20
+                
+                while not success and retries > 0:
+                    try:
+                        print(f"   -> Indexando chunks {j} a {min(j + sub_batch_size, len(chunks))}...")
+                        build_vectorstore(sub_batch)
+                        success = True
+                        # Pausa corta entre lotes
+                        time.sleep(2)
+                    except Exception as e:
+                        err_str = str(e)
+                        if "429" in err_str or "Quota exceeded" in err_str:
+                            retries -= 1
+                            print(f"   -> [429 Quota Exceeded] Esperando {wait_time}s para reintentar ({retries} reintentos restantes)...")
+                            time.sleep(wait_time)
+                            wait_time *= 2  # Backoff exponencial
+                        else:
+                            raise e
+                
+                if not success:
+                    raise Exception(f"No se pudo indexar el lote de chunks a partir del índice {j} tras varios reintentos.")
+            
             print(f"   -> ¡Completado! {len(chunks)} chunks agregados.")
         except Exception as e:
             print(f"   -> ERROR al procesar {pdf_file.name}: {str(e)}")
@@ -37,3 +65,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
