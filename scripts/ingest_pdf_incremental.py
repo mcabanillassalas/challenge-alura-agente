@@ -9,10 +9,11 @@ from app.services.vectorstore import build_vectorstore
 
 def main():
     if len(sys.argv) < 2:
-        print("Uso: python -m scripts.ingest_pdf_incremental <nombre_del_archivo.pdf>")
+        print("Uso: python -m scripts.ingest_pdf_incremental <nombre_del_archivo.pdf> [indice_de_inicio]")
         sys.exit(1)
         
     pdf_filename = sys.argv[1]
+    start_index = int(sys.argv[2]) if len(sys.argv) > 2 else 0
     docs_path = Path(settings.docs_path)
     pdf_file = docs_path / pdf_filename
     
@@ -24,16 +25,18 @@ def main():
             sys.exit(1)
             
     print(f"\nProcesando archivo individual: {pdf_file.name} ({pdf_file.stat().st_size / (1024*1024):.2f} MB)...")
+    if start_index > 0:
+        print(f"   -> Reanudando desde el fragmento índice: {start_index}")
     try:
         # Cargar el documento
         documents = load_documents_from_files([pdf_file])
         chunks = split_documents(documents)
         print(f"   -> Dividido en {len(chunks)} chunks.")
         
-        # Indexar en sub-lotes de 100 chunks para optimizar cuota diaria (1 request por lote)
-        # 10s de espera entre lotes = 6 peticiones por minuto (RPM), completamente seguro para la cuota
-        sub_batch_size = 100
-        for j in range(0, len(chunks), sub_batch_size):
+        # Indexar en sub-lotes de 50 chunks para optimizar cuotas (TPM y RPM)
+        # 15s de espera entre lotes = ~4 peticiones por minuto, completamente seguro
+        sub_batch_size = 50
+        for j in range(start_index, len(chunks), sub_batch_size):
             sub_batch = chunks[j : j + sub_batch_size]
             success = False
             retries = 5
@@ -44,8 +47,8 @@ def main():
                     print(f"   -> Indexando chunks {j} a {min(j + sub_batch_size, len(chunks))}...")
                     build_vectorstore(sub_batch)
                     success = True
-                    # Pausa de 10 segundos entre lotes para mantenernos bajo el límite de RPM
-                    time.sleep(10)
+                    # Pausa de 15 segundos entre lotes
+                    time.sleep(15)
                 except Exception as e:
                     err_str = str(e)
                     if "429" in err_str or "Quota exceeded" in err_str:
