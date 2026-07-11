@@ -14,6 +14,7 @@ class Settings(BaseSettings):
 
     gemini_api_key: str | None = None
     gemini_chat_model: str = "gemini-2.5-flash"
+    gemini_embedding_model: str = "gemini-embedding-2"
 
     ollama_base_url: str = "http://127.0.0.1:11434"
     ollama_llm_model: str = "qwen2.5-coder:7b"
