@@ -33,9 +33,13 @@ def main():
         chunks = split_documents(documents)
         print(f"   -> Dividido en {len(chunks)} chunks.")
         
-        # Indexar en sub-lotes de 50 chunks para optimizar cuotas (TPM y RPM)
-        # 15s de espera entre lotes = ~4 peticiones por minuto, completamente seguro
-        sub_batch_size = 50
+        # Ajustar dinámicamente lote y pausas según el proveedor (OpenAI tiene alta cuota prepagada)
+        is_openai = settings.embedding_provider.lower().strip() == "openai"
+        sub_batch_size = 100 if is_openai else 50
+        sleep_time = 0.5 if is_openai else 15
+        
+        print(f"   -> Usando proveedor: {settings.embedding_provider.upper()} (Lote: {sub_batch_size}, Pausa: {sleep_time}s)")
+        
         for j in range(start_index, len(chunks), sub_batch_size):
             sub_batch = chunks[j : j + sub_batch_size]
             success = False
@@ -47,8 +51,8 @@ def main():
                     print(f"   -> Indexando chunks {j} a {min(j + sub_batch_size, len(chunks))}...")
                     build_vectorstore(sub_batch)
                     success = True
-                    # Pausa de 15 segundos entre lotes
-                    time.sleep(15)
+                    # Pausa dinámica
+                    time.sleep(sleep_time)
                 except Exception as e:
                     err_str = str(e)
                     if "429" in err_str or "Quota exceeded" in err_str:
