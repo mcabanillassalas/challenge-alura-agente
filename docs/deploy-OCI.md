@@ -220,7 +220,7 @@ pip install -r requirements.txt
 nano .env
 ```
 
-Ejemplo real optimizado para Gemini en OCI:
+Ejemplo unificado que soporta Ollama, OpenAI y Gemini:
 
 ```env
 APP_NAME="Exactus RAG Agent"
@@ -229,14 +229,28 @@ APP_HOST=0.0.0.0
 APP_PORT=8000
 LOG_LEVEL=INFO
 
-# Usamos Gemini para evitar el consumo de RAM de Ollama local
-LLM_PROVIDER=gemini
-EMBEDDING_PROVIDER=gemini
+# Proveedor por defecto de LLM y Embeddings
+# Opciones: ollama, gemini, openai
+LLM_PROVIDER=openai
+EMBEDDING_PROVIDER=openai
 
-# Clave de API de Gemini y modelo de chat
-GEMINI_API_KEY=AQ.Ab8RN6K9Mu6a8Xfm0nMGB1Ts_FyB9jtdxadIPfNBn7T7500NUg
+# Configuración de Ollama (Desarrollo Local)
+OLLAMA_HOST=http://127.0.0.1:11434
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_EMBEDDING_MODEL=nomic-embed-text
+OLLAMA_LLM_MODEL=qwen2.5-coder:7b
+
+# Configuración de OpenAI (Para alta velocidad con saldo prepagado)
+OPENAI_API_KEY=tu_clave_de_openai_prepagada_aqui
+OPENAI_CHAT_MODEL=gpt-4o-mini
+OPENAI_EMBEDDING_MODEL=text-embedding-3-small
+
+# Configuración de Gemini
+GEMINI_API_KEY=tu_clave_de_gemini_aqui
 GEMINI_CHAT_MODEL=gemini-2.5-flash
+GEMINI_EMBEDDING_MODEL=gemini-embedding-001
 
+# Parámetros del RAG y Vectorstore
 CHROMA_PERSIST_DIRECTORY=data/processed
 DOCS_PATH=data/raw/exactus
 TOP_K=4
@@ -257,31 +271,39 @@ También puedes subir tus PDFs por SCP.
 
 ---
 
-## Paso 9: Ingestar documentos (Evitando límites de cuota)
+## Paso 9: Ingestar documentos (Evitando límites de cuota y auto-reanudando)
 
-La cuenta gratuita de Gemini limita el número de solicitudes de embedding a **100 por minuto (100 RPM)**. Para evitar que el proceso falle por error `429 Quota Exceeded`, el proyecto incluye un script de **ingesta incremental** que divide los documentos en sub-lotes pequeños e incluye reintentos automáticos con espera (backoff exponencial).
+> [!IMPORTANT]
+> **REGLA DE ORO DE CAMBIO DE EMBEDDINGS:**
+> Si cambias el `EMBEDDING_PROVIDER` (por ejemplo, pasas de Gemini a OpenAI o viceversa), las dimensiones de los vectores cambian (OpenAI es 1,536 y Gemini 3,072). **Debes limpiar la base de datos vieja antes de indexar de nuevo** ejecutando en OCI:
+> `rm -rf /home/ubuntu/agente-alura-rag/data/processed`
 
-Puedes elegir entre procesar todo el corpus de manera incremental o archivo por archivo:
+El sistema detecta automáticamente tu `EMBEDDING_PROVIDER` en el `.env` y ajusta las sub-divisiones (pacing) para evitar errores 429 de límite de cuota:
+* **Con OpenAI (Prepago):** Procesa bloques grandes de 100 chunks y realiza pausas mínimas de 0.5s (indexa en segundos).
+* **Con Gemini (Gratuito):** Procesa bloques pequeños de 50 chunks y espera 15 segundos entre ellos para mantenerse bajo el límite estricto de Tokens por Minuto (TPM) de Google.
+
+Puedes elegir entre procesar todo el corpus o archivo por archivo:
 
 ### Opción A: Ingesta completa incremental
-
 ```bash
 source venv/bin/activate
 cd /home/ubuntu/agente-alura-rag
 python -m scripts.ingest_incremental
 ```
 
-### Opción B: Ingesta de un único PDF (Recomendado para control de progreso)
-
-Si quieres procesar los PDFs uno por uno:
-
+### Opción B: Ingesta de un único PDF (Recomendado)
 ```bash
 source venv/bin/activate
 cd /home/ubuntu/agente-alura-rag
 python -m scripts.ingest_pdf_incremental NOMBRE_DEL_ARCHIVO.pdf
 ```
 
-_(Por ejemplo: `python -m scripts.ingest_pdf_incremental CI_Manual_Usuario_Control_Inventarios.pdf`)_
+### Opción C: Reanudar un manual interrumpido
+Si la indexación de un manual grande se detuvo (por ejemplo, en el chunk 500), no tienes que volver a empezar desde cero ni perderás lo avanzado. Puedes reanudar la ingesta indicando el índice del chunk de inicio como segundo parámetro:
+```bash
+python -m scripts.ingest_pdf_incremental NOMBRE_DEL_ARCHIVO.pdf 500
+```
+_(Por ejemplo: `python -m scripts.ingest_pdf_incremental RH_Manual_Usuario_Recursos_Humanos.pdf 500`)_
 
 ---
 
@@ -315,11 +337,11 @@ Para acceder a la API desde internet, debes abrir el puerto 8000 tanto en la red
 
 ### B. Abrir el puerto en la máquina virtual (Ubuntu)
 
-Las instancias de Ubuntu de Oracle Cloud Infrastructure vienen por defecto con configuraciones muy estrictas en `iptables` que bloquean puertos no estándar. Para abrir el puerto 8000 de forma persistente, ejecuta en tu terminal SSH:
+Las instancias de Ubuntu de Oracle Cloud Infrastructure vienen por defecto con configuraciones muy estrictas en `iptables` que bloquean puertos no estándar. Para garantizar que la regla no sea bloqueada por una regla restrictiva previa, insértala al principio de la lista (**Posición 1**) ejecutando en tu terminal SSH:
 
 ```bash
-# Agregar la regla al puerto 8000 en iptables
-sudo iptables -I INPUT 6 -m state --state NEW -p tcp --dport 8000 -j ACCEPT
+# Agregar la regla al puerto 8000 en la posición 1 (máxima prioridad)
+sudo iptables -I INPUT 1 -p tcp --dport 8000 -j ACCEPT
 
 # Guardar la regla para que persista tras reiniciar la instancia
 sudo netfilter-persistent save
@@ -342,12 +364,20 @@ sudo ufw status
 curl http://130.162.58.58:8000/health
 ```
 
-Prueba una pregunta:
+Prueba una pregunta con Gemini o con OpenAI:
 
+**Consulta a Gemini:**
 ```bash
 curl -X POST http://130.162.58.58:8000/api/v1/ask \
   -H "Content-Type: application/json" \
   -d '{"question":"¿Cómo crear un usuario en Exactus?","llm_provider":"gemini","llm_model":"gemini-2.5-flash"}'
+```
+
+**Consulta a OpenAI:**
+```bash
+curl -X POST http://130.162.58.58:8000/api/v1/ask \
+  -H "Content-Type: application/json" \
+  -d '{"question":"¿Cómo crear un usuario en Exactus?","llm_provider":"openai","llm_model":"gpt-4o-mini"}'
 ```
 
 ---
