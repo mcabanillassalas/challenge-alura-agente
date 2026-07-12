@@ -279,12 +279,14 @@ También puedes subir tus PDFs por SCP.
 > `rm -rf /home/ubuntu/agente-alura-rag/data/processed`
 
 El sistema detecta automáticamente tu `EMBEDDING_PROVIDER` en el `.env` y ajusta las sub-divisiones (pacing) para evitar errores 429 de límite de cuota:
-* **Con OpenAI (Prepago):** Procesa bloques grandes de 100 chunks y realiza pausas mínimas de 0.5s (indexa en segundos).
-* **Con Gemini (Gratuito):** Procesa bloques pequeños de 50 chunks y espera 15 segundos entre ellos para mantenerse bajo el límite estricto de Tokens por Minuto (TPM) de Google.
+
+- **Con OpenAI (Prepago):** Procesa bloques grandes de 100 chunks y realiza pausas mínimas de 0.5s (indexa en segundos).
+- **Con Gemini (Gratuito):** Procesa bloques pequeños de 50 chunks y espera 15 segundos entre ellos para mantenerse bajo el límite estricto de Tokens por Minuto (TPM) de Google.
 
 Puedes elegir entre procesar todo el corpus o archivo por archivo:
 
 ### Opción A: Ingesta completa incremental
+
 ```bash
 source venv/bin/activate
 cd /home/ubuntu/agente-alura-rag
@@ -292,6 +294,7 @@ python -m scripts.ingest_incremental
 ```
 
 ### Opción B: Ingesta de un único PDF (Recomendado)
+
 ```bash
 source venv/bin/activate
 cd /home/ubuntu/agente-alura-rag
@@ -299,10 +302,13 @@ python -m scripts.ingest_pdf_incremental NOMBRE_DEL_ARCHIVO.pdf
 ```
 
 ### Opción C: Reanudar un manual interrumpido
+
 Si la indexación de un manual grande se detuvo (por ejemplo, en el chunk 500), no tienes que volver a empezar desde cero ni perderás lo avanzado. Puedes reanudar la ingesta indicando el índice del chunk de inicio como segundo parámetro:
+
 ```bash
 python -m scripts.ingest_pdf_incremental NOMBRE_DEL_ARCHIVO.pdf 500
 ```
+
 _(Por ejemplo: `python -m scripts.ingest_pdf_incremental RH_Manual_Usuario_Recursos_Humanos.pdf 500`)_
 
 ---
@@ -367,6 +373,7 @@ curl http://130.162.58.58:8000/health
 Prueba una pregunta con Gemini o con OpenAI:
 
 **Consulta a Gemini:**
+
 ```bash
 curl -X POST http://130.162.58.58:8000/api/v1/ask \
   -H "Content-Type: application/json" \
@@ -374,6 +381,7 @@ curl -X POST http://130.162.58.58:8000/api/v1/ask \
 ```
 
 **Consulta a OpenAI:**
+
 ```bash
 curl -X POST http://130.162.58.58:8000/api/v1/ask \
   -H "Content-Type: application/json" \

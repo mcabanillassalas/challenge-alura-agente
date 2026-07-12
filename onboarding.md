@@ -107,29 +107,23 @@ streamlit run frontend/streamlit_app.py
 
 ## Ingesta y reconstrucción de índice
 
-La ingesta actual se hace por la API del frontend o por script.
+La ingesta actual se hace por la API del frontend o por línea de comandos utilizando los scripts optimizados para producción (OCI VM):
 
-La subida desde el frontend procesa solo los archivos nuevos y evita reconstruir todo el corpus en cada request.
+1. **Ingesta incremental completa (`python -m scripts.ingest_incremental`):**
+   Procesa de forma incremental todos los PDFs de la carpeta raw sin borrar la base de datos (a menos que borres la carpeta `data/processed` manualmente).
 
-Debajo de la carga de documentos hay una opción de reindexación que reutiliza el mismo proveedor y modelo configurados para la carga.
+2. **Ingesta incremental por archivo (`python -m scripts.ingest_pdf_incremental NOMBRE.pdf [start_index]`):**
+   Permite indexar un archivo PDF individual. Opcionalmente, permite reanudar desde un fragmento (chunk) específico si el proceso se interrumpió (ej. `python -m scripts.ingest_pdf_incremental RH_Manual_Usuario_Recursos_Humanos.pdf 500`).
 
-La ingesta añade metadatos como `manual_code` y `document_title` para ayudar a que la recuperación favorezca el manual más específico.
+### Optimización y Pacing automático:
+Los scripts de ingesta detectan tu `EMBEDDING_PROVIDER` en el `.env` y regulan el tráfico para evitar errores `429 Quota Exceeded`:
+- **OpenAI (Prepago):** Usa lotes de 100 chunks y pausas de 0.5s (indexación ultra rápida).
+- **Gemini (Gratuito):** Usa lotes de 50 chunks y pausas de 15s para evitar chocar contra el límite de tokens por minuto (TPM) de Google.
 
-Regla práctica:
+> [!IMPORTANT]
+> **REGLA DE DIMENSIONES:** Si cambias de proveedor de embeddings en el `.env` (de Gemini a OpenAI o viceversa), debes borrar previamente la carpeta `data/processed` para evitar discrepancias de dimensiones en Chroma.
 
-- Si solo cambias pesos, sinónimos o reglas en `app/core/manual_routing.yml`, no necesitas volver a generar embeddings.
-- Si cambias cómo se etiqueta cada documento al indexar, o quieres que los PDFs ya cargados tengan los nuevos metadatos, sí conviene reindexar una vez.
-- Si subes documentos nuevos desde el frontend, esos ya se indexan con la lógica nueva y no hace falta tocar todo el corpus.
-
-En la práctica, lo recomendado es hacer un reindexado completo una sola vez para los manuales ya cargados y después solo reindexar cuando agregues nuevos documentos o cambies la estructura de metadatos.
-
-Script manual:
-
-```powershell
-python -m scripts.ingest
-```
-
-Si necesitas reconstruir desde cero el índice y volver a procesar los documentos, usa el script de rebuild:
+Si necesitas reconstruir desde cero el índice completo de forma tradicional, usa:
 
 ```powershell
 python -m scripts.rebuild_index

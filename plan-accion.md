@@ -183,28 +183,34 @@ Objetivo: dejar el repositorio listo para evaluación y entrega.
 
 La fase se considera cerrada cuando el repositorio cumple con los entregables solicitados: código, README, arquitectura, instrucciones, ejemplos y evidencia del despliegue.[file:1][file:4][file:2]
 
-## Fase 7. Docker y despliegue en OCI
+## Fase 7. Despliegue en OCI (Directo vía Systemd)
 
-Objetivo: publicar la solución en Oracle Cloud Infrastructure Free Tier.
+Objetivo: publicar la solución en Oracle Cloud Infrastructure Free Tier optimizando recursos.
+
+> [!NOTE]
+> **Decisión de Arquitectura:**
+> Debido a la limitación de 1GB de RAM de la instancia gratuita de OCI (VM.Standard.E2.1.Micro), se decidió realizar un despliegue directo sobre el sistema operativo (Ubuntu) utilizando un entorno virtual de Python y gestionando el servicio en segundo plano con **Systemd**. Esto evita el consumo adicional de memoria que traería Docker y maximiza la disponibilidad de recursos para el Agente RAG.
 
 ### Tareas
 
-- Crear `Dockerfile` y `docker-compose.yml`.
-- Probar imagen localmente.
-- Crear instancia en OCI.
-- Instalar Docker en la VM.
-- Desplegar la aplicación.
-- Exponer el servicio públicamente.
-- Capturar evidencia final.
+- Crear y configurar la instancia VM.Standard.E2.1.Micro en OCI.
+- Subir el código fuente empaquetado.
+- Configurar el entorno virtual e instalar dependencias.
+- Configurar las variables de entorno unificadas en `.env` (habilitando OpenAI como proveedor principal prepagado).
+- Ejecutar la ingesta incremental rápida de los manuales.
+- Configurar reglas de seguridad de entrada de red (OCI Security List y iptables del SO) para abrir el puerto 8000.
+- Configurar exactus-rag.service en Systemd para garantizar disponibilidad del backend.
+- Conectar el frontend local de Streamlit a la API de producción.
 
 ### Entregables
 
-- Aplicación accesible en OCI o evidencia equivalente.
-- Captura de pantalla o URL pública.
+- Backend API corriendo de forma pública y persistente en `http://130.162.58.58:8000`.
+- Endpoint `GET /health` respondiendo externamente con éxito.
+- Frontend Streamlit local interactuando exitosamente con la API en OCI.
 
 ### Criterio de cierre
 
-La fase se considera cerrada cuando la aplicación está funcionando en OCI o existe una evidencia válida del despliegue, tal como exige el challenge.[file:1][file:4]
+La fase se considera cerrada cuando la aplicación está funcionando en OCI, el puerto es accesible externamente y el sistema de reindexación incremental responde correctamente sin límites de cuota usando la clave OpenAI prepagada.
 
 ## Plan de seguimiento
 
@@ -221,13 +227,13 @@ El seguimiento debe ser simple, medible y orientado a entregables, ya que el des
 
 | Fase | Estado | Responsable | Evidencia | Fecha objetivo |
 |---|---|---|---|---|
-| Definición de alcance | Pendiente | Proyecto | PDFs y preguntas base | Semana 1 |
-| Ingesta documental | Pendiente | Proyecto | Script de ingesta | Semana 1 |
-| Índice vectorial | Pendiente | Proyecto | Vector store persistido | Semana 1 |
-| Cadena RAG | Pendiente | Proyecto | Respuestas correctas | Semana 2 |
-| API local | Pendiente | Proyecto | `/health` y `/ask` operativos | Semana 2 |
-| README y documentación | Pendiente | Proyecto | README completo | Semana 2 |
-| Deploy OCI | Pendiente | Proyecto | URL o captura | Semana 3 |
+| Definición de alcance | Validado | Proyecto | PDFs y preguntas base creados | Completado |
+| Ingesta documental | Validado | Proyecto | Scripts de ingesta incremental con pacing automático | Completado |
+| Índice vectorial | Validado | Proyecto | Vector store local persistido (Chroma DB) | Completado |
+| Cadena RAG | Validado | Proyecto | Enrutamiento temático inteligente y respuestas correctas | Completado |
+| API local | Validado | Proyecto | `/health` y `/ask` operativos en entorno de desarrollo | Completado |
+| README y documentación | Validado | Proyecto | README completo con guías de OCI y de Red | Completado |
+| Deploy OCI | Validado | Proyecto | API activa en `http://130.162.58.58:8000` con systemd | Completado |
 
 ### Métricas de avance
 

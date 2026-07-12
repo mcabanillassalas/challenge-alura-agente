@@ -88,22 +88,27 @@ OPENAI_EMBEDDING_MODEL=text-embedding-3-small
 ```env
 GEMINI_API_KEY=tu_api_key
 GEMINI_CHAT_MODEL=gemini-2.5-flash
+GEMINI_EMBEDDING_MODEL=gemini-embedding-001
 ```
 
 ## Ingesta e índice
 
 Coloca los manuales en `data/raw/exactus/` y ejecuta:
 
-```powershell
-python -m scripts.ingest
-```
+* **Ingesta incremental completa:**
+  ```powershell
+  python -m scripts.ingest_incremental
+  ```
+* **Ingesta incremental por archivo individual / Reanudación:**
+  ```powershell
+  python -m scripts.ingest_pdf_incremental NOMBRE_EL_ARCHIVO.pdf [start_index]
+  ```
+* **Reconstrucción del índice desde cero (Tradicional):**
+  ```powershell
+  python -m scripts.rebuild_index
+  ```
 
-Si necesitas borrar el vectorstore y reconstruirlo desde cero:
-
-```powershell
-python -m scripts.rebuild_index
-```
-
+El sistema detecta automáticamente tu `EMBEDDING_PROVIDER` y regula la tasa de peticiones y loteado para evitar errores de cuota (429).
 La carga desde el frontend indexa solo los archivos recién subidos; no rehace todo el corpus en cada envío.
 
 Debajo de la sección de carga hay una acción de reindexación que reutiliza el mismo proveedor y modelo seleccionados para cargar documentos.
