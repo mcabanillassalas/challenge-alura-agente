@@ -403,11 +403,15 @@ curl -X POST http://130.162.58.58:8000/api/v1/ask \
 Para que la aplicación corra de forma ininterrumpida y se inicie automáticamente tras reiniciar la máquina virtual, se configuran dos servicios persistentes en segundo plano: uno para el Backend y otro para el Frontend.
 
 ### A. Servicio Backend: FastAPI
+
 Crea el archivo de definición del backend:
+
 ```bash
 sudo nano /etc/systemd/system/exactus-rag-backend.service
 ```
+
 E ingresa el siguiente contenido:
+
 ```ini
 [Unit]
 Description=Exactus RAG Backend API
@@ -427,11 +431,15 @@ WantedBy=multi-user.target
 ```
 
 ### B. Servicio Frontend: Streamlit
+
 Crea el archivo de definición del frontend:
+
 ```bash
 sudo nano /etc/systemd/system/exactus-rag-frontend.service
 ```
+
 E ingresa el siguiente contenido (fijando `API_BASE_URL` apuntando al backend local de forma interna):
+
 ```ini
 [Unit]
 Description=Exactus RAG Frontend (Streamlit)
@@ -452,7 +460,9 @@ WantedBy=multi-user.target
 ```
 
 ### C. Levantar y Habilitar los Servicios
+
 Ejecuta los siguientes comandos para recargar el gestor de servicios, habilitar el arranque automático de ambos servicios y levantarlos en el servidor:
+
 ```bash
 # Recargar systemd
 sudo systemctl daemon-reload
@@ -466,6 +476,66 @@ sudo systemctl restart exactus-rag-backend.service exactus-rag-frontend.service
 # Monitorear su estado
 sudo systemctl status exactus-rag-backend.service exactus-rag-frontend.service
 ```
+
+---
+
+## Paso 14: Configurar SSL y Dominio Gratuito (DuckDNS + Caddy)
+
+Para evitar acceder al RAG por direcciones IP desprotegidas y asegurar la conexión web con HTTPS gratuito, se utiliza **DuckDNS** (subdominio dinámico gratuito) y **Caddy Server** (como proxy inverso con emisión y renovación automática de certificados SSL Let's Encrypt).
+
+### A. Registrar y Apuntar el Dominio
+1. Crea una cuenta en [DuckDNS](https://www.duckdns.org/).
+2. Registra un subdominio (ej. `challenge-alura.duckdns.org`).
+3. En el panel de control de DuckDNS, reemplaza la IP actual con la IP pública de tu servidor OCI (`130.162.58.58`) y presiona **update ip**.
+
+### B. Abrir Puertos Web (80 y 443)
+1. **Consola Web de OCI:** En la *Default Security List* de tu subred, añade dos reglas de ingreso para permitir tráfico TCP en los puertos **80** (HTTP) y **443** (HTTPS) desde cualquier origen (`0.0.0.0/0`).
+2. **Máquina Virtual (Terminal SSH):** Ejecuta:
+   ```bash
+   sudo iptables -I INPUT 1 -p tcp --dport 80 -j ACCEPT
+   sudo iptables -I INPUT 1 -p tcp --dport 443 -j ACCEPT
+   sudo netfilter-persistent save
+   ```
+
+### C. Instalar Caddy Server en Ubuntu
+Ejecuta la instalación oficial:
+```bash
+sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo apt update
+sudo apt install -y caddy
+```
+
+### D. Configurar el Proxy Inverso (Caddyfile)
+Edita el archivo de configuración en `/etc/caddy/Caddyfile`:
+```bash
+sudo nano /etc/caddy/Caddyfile
+```
+E ingresa el mapeo web:
+```caddy
+challenge-alura.duckdns.org {
+    # Redirigir la API del backend
+    reverse_proxy /api/* localhost:8000
+    reverse_proxy /docs* localhost:8000
+    reverse_proxy /openapi.json* localhost:8000
+    reverse_proxy /health* localhost:8000
+
+    # Redirigir todo lo demás al frontend Streamlit
+    reverse_proxy localhost:8501
+}
+```
+
+### E. Iniciar Caddy
+Aplica los cambios reiniciando el servicio:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable caddy
+sudo systemctl restart caddy
+```
+
+Caddy solicitará de forma transparente el certificado SSL a Let's Encrypt. Una vez emitido, la interfaz de usuario estará completamente disponible y cifrada en:
+👉 **`https://challenge-alura.duckdns.org`**
 
 ---
 
