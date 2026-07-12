@@ -1,4 +1,5 @@
 # Proyecto Challenge Alura Agente
+
 ## Exactus RAG Agent
 
 Agente RAG en Python para consultar manuales PDF del ERP Exactus con FastAPI, LangChain, Chroma y un frontend en Streamlit.
@@ -95,15 +96,15 @@ GEMINI_EMBEDDING_MODEL=gemini-embedding-001
 
 Coloca los manuales en `data/raw/exactus/` y ejecuta:
 
-* **Ingesta incremental completa:**
+- **Ingesta incremental completa:**
   ```powershell
   python -m scripts.ingest_incremental
   ```
-* **Ingesta incremental por archivo individual / Reanudación:**
+- **Ingesta incremental por archivo individual / Reanudación:**
   ```powershell
   python -m scripts.ingest_pdf_incremental NOMBRE_EL_ARCHIVO.pdf [start_index]
   ```
-* **Reconstrucción del índice desde cero (Tradicional):**
+- **Reconstrucción del índice desde cero (Tradicional):**
   ```powershell
   python -m scripts.rebuild_index
   ```

@@ -225,15 +225,15 @@ El seguimiento debe ser simple, medible y orientado a entregables, ya que el des
 
 ### Tablero de seguimiento
 
-| Fase | Estado | Responsable | Evidencia | Fecha objetivo |
-|---|---|---|---|---|
-| Definición de alcance | Validado | Proyecto | PDFs y preguntas base creados | Completado |
-| Ingesta documental | Validado | Proyecto | Scripts de ingesta incremental con pacing automático | Completado |
-| Índice vectorial | Validado | Proyecto | Vector store local persistido (Chroma DB) | Completado |
-| Cadena RAG | Validado | Proyecto | Enrutamiento temático inteligente y respuestas correctas | Completado |
-| API local | Validado | Proyecto | `/health` y `/ask` operativos en entorno de desarrollo | Completado |
-| README y documentación | Validado | Proyecto | README completo con guías de OCI y de Red | Completado |
-| Deploy OCI | Validado | Proyecto | API activa en `http://130.162.58.58:8000` con systemd | Completado |
+| Fase                   | Estado   | Responsable | Evidencia                                                | Fecha objetivo |
+| ---------------------- | -------- | ----------- | -------------------------------------------------------- | -------------- |
+| Definición de alcance  | Validado | Proyecto    | PDFs y preguntas base creados                            | Completado     |
+| Ingesta documental     | Validado | Proyecto    | Scripts de ingesta incremental con pacing automático     | Completado     |
+| Índice vectorial       | Validado | Proyecto    | Vector store local persistido (Chroma DB)                | Completado     |
+| Cadena RAG             | Validado | Proyecto    | Enrutamiento temático inteligente y respuestas correctas | Completado     |
+| API local              | Validado | Proyecto    | `/health` y `/ask` operativos en entorno de desarrollo   | Completado     |
+| README y documentación | Validado | Proyecto    | README completo con guías de OCI y de Red                | Completado     |
+| Deploy OCI             | Validado | Proyecto    | API activa en `http://130.162.58.58:8000` con systemd    | Completado     |
 
 ### Métricas de avance
 
@@ -295,13 +295,13 @@ exactus-rag-agent/
 
 ## Riesgos y mitigación
 
-| Riesgo | Impacto | Mitigación |
-|---|---|---|
-| PDFs con mala extracción de texto | Medio | Probar primero con pocos manuales y validar calidad del texto. |
-| Respuestas imprecisas | Alto | Ajustar chunk size, embeddings y prompt; validar con preguntas reales. |
-| Exceso de alcance | Alto | Mantener MVP enfocado en pocos documentos y una API simple. |
-| Problemas en OCI | Medio | Probar primero en Docker local y luego migrar a OCI. |
-| README incompleto | Alto | Documentar desde etapas tempranas y no al final únicamente. |
+| Riesgo                            | Impacto | Mitigación                                                             |
+| --------------------------------- | ------- | ---------------------------------------------------------------------- |
+| PDFs con mala extracción de texto | Medio   | Probar primero con pocos manuales y validar calidad del texto.         |
+| Respuestas imprecisas             | Alto    | Ajustar chunk size, embeddings y prompt; validar con preguntas reales. |
+| Exceso de alcance                 | Alto    | Mantener MVP enfocado en pocos documentos y una API simple.            |
+| Problemas en OCI                  | Medio   | Probar primero en Docker local y luego migrar a OCI.                   |
+| README incompleto                 | Alto    | Documentar desde etapas tempranas y no al final únicamente.            |
 
 ## Criterios de éxito del proyecto
 

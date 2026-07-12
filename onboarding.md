@@ -116,7 +116,9 @@ La ingesta actual se hace por la API del frontend o por línea de comandos utili
    Permite indexar un archivo PDF individual. Opcionalmente, permite reanudar desde un fragmento (chunk) específico si el proceso se interrumpió (ej. `python -m scripts.ingest_pdf_incremental RH_Manual_Usuario_Recursos_Humanos.pdf 500`).
 
 ### Optimización y Pacing automático:
+
 Los scripts de ingesta detectan tu `EMBEDDING_PROVIDER` en el `.env` y regulan el tráfico para evitar errores `429 Quota Exceeded`:
+
 - **OpenAI (Prepago):** Usa lotes de 100 chunks y pausas de 0.5s (indexación ultra rápida).
 - **Gemini (Gratuito):** Usa lotes de 50 chunks y pausas de 15s para evitar chocar contra el límite de tokens por minuto (TPM) de Google.
 

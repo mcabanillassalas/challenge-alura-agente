@@ -327,29 +327,37 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 Para acceder a la API desde internet, debes abrir el puerto 8000 tanto en la red de Oracle Cloud como en la máquina virtual (Ubuntu).
 
-### A. Abrir el puerto en la consola de OCI
+### A. Abrir los puertos en la consola de OCI
 
 1. En **OCI Console**, ve a la página de detalles de tu instancia.
 2. Haz clic en la **Subnet** asociada (en la sección _Primary VNIC_).
 3. Haz clic en la **Default Security List** de la subred.
-4. Haz clic en **Add Ingress Rules** y configura:
+4. Haz clic en **Add Ingress Rules** y configura el puerto de la API (`8000`):
    - **Source Type:** CIDR
-   - **Source CIDR:** `0.0.0.0/0` (para acceso público) o tu IP pública actual para mayor seguridad.
+   - **Source CIDR:** `0.0.0.0/0` (para acceso público)
    - **IP Protocol:** TCP
-   - **Source Port Range:** (dejar vacío o `All`)
    - **Destination Port Range:** `8000`
    - **Description:** Exactus RAG API
-5. Haz clic en **Add Ingress Rules**.
+5. Haz clic de nuevo en **Add Ingress Rules** y configura el puerto de la Web de Streamlit (`8501`):
+   - **Source Type:** CIDR
+   - **Source CIDR:** `0.0.0.0/0`
+   - **IP Protocol:** TCP
+   - **Destination Port Range:** `8501`
+   - **Description:** Exactus RAG Streamlit Web
+6. Haz clic en **Add Ingress Rules** para guardar ambas reglas.
 
-### B. Abrir el puerto en la máquina virtual (Ubuntu)
+### B. Abrir los puertos en la máquina virtual (Ubuntu)
 
-Las instancias de Ubuntu de Oracle Cloud Infrastructure vienen por defecto con configuraciones muy estrictas en `iptables` que bloquean puertos no estándar. Para garantizar que la regla no sea bloqueada por una regla restrictiva previa, insértala al principio de la lista (**Posición 1**) ejecutando en tu terminal SSH:
+Las instancias de Ubuntu de Oracle Cloud Infrastructure vienen por defecto con configuraciones muy estrictas en `iptables` que bloquean puertos no estándar. Para garantizar que las reglas no sean bloqueadas por reglas restrictivas previas, insértalas al principio de la lista (**Posición 1**) ejecutando en tu terminal SSH:
 
 ```bash
-# Agregar la regla al puerto 8000 en la posición 1 (máxima prioridad)
+# Permitir tráfico para la API (Puerto 8000)
 sudo iptables -I INPUT 1 -p tcp --dport 8000 -j ACCEPT
 
-# Guardar la regla para que persista tras reiniciar la instancia
+# Permitir tráfico para la Web de Streamlit (Puerto 8501)
+sudo iptables -I INPUT 1 -p tcp --dport 8501 -j ACCEPT
+
+# Guardar las reglas para que persistan tras reiniciar la instancia
 sudo netfilter-persistent save
 ```
 
@@ -390,19 +398,19 @@ curl -X POST http://130.162.58.58:8000/api/v1/ask \
 
 ---
 
-## Paso 13: Ejecutar como servicio systemd (recomendado)
+## Paso 13: Ejecutar como servicios systemd (Servicio persistente)
 
-Para que el backend corra en segundo plano y se inicie automáticamente con el sistema:
+Para que la aplicación corra de forma ininterrumpida y se inicie automáticamente tras reiniciar la máquina virtual, se configuran dos servicios persistentes en segundo plano: uno para el Backend y otro para el Frontend.
 
+### A. Servicio Backend: FastAPI
+Crea el archivo de definición del backend:
 ```bash
-sudo nano /etc/systemd/system/exactus-rag.service
+sudo nano /etc/systemd/system/exactus-rag-backend.service
 ```
-
-Contenido (asegúrate de que las rutas al entorno virtual `venv` apunten a `/home/ubuntu/agente-alura-rag/venv/bin`):
-
+E ingresa el siguiente contenido:
 ```ini
 [Unit]
-Description=Exactus RAG Agent
+Description=Exactus RAG Backend API
 After=network.target
 
 [Service]
@@ -412,19 +420,51 @@ WorkingDirectory=/home/ubuntu/agente-alura-rag
 Environment="PATH=/home/ubuntu/agente-alura-rag/venv/bin"
 ExecStart=/home/ubuntu/agente-alura-rag/venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
 Restart=always
-RestartSec=10
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target
 ```
 
-Inicia el servicio:
-
+### B. Servicio Frontend: Streamlit
+Crea el archivo de definición del frontend:
 ```bash
+sudo nano /etc/systemd/system/exactus-rag-frontend.service
+```
+E ingresa el siguiente contenido (fijando `API_BASE_URL` apuntando al backend local de forma interna):
+```ini
+[Unit]
+Description=Exactus RAG Frontend (Streamlit)
+After=network.target exactus-rag-backend.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/agente-alura-rag
+Environment="PATH=/home/ubuntu/agente-alura-rag/venv/bin"
+Environment="API_BASE_URL=http://localhost:8000"
+ExecStart=/home/ubuntu/agente-alura-rag/venv/bin/streamlit run frontend/streamlit_app.py --server.port 8501 --server.address 0.0.0.0
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### C. Levantar y Habilitar los Servicios
+Ejecuta los siguientes comandos para recargar el gestor de servicios, habilitar el arranque automático de ambos servicios y levantarlos en el servidor:
+```bash
+# Recargar systemd
 sudo systemctl daemon-reload
-sudo systemctl enable exactus-rag
-sudo systemctl start exactus-rag
-sudo systemctl status exactus-rag
+
+# Habilitar el inicio con el encendido de la máquina virtual
+sudo systemctl enable exactus-rag-backend.service exactus-rag-frontend.service
+
+# Levantar/Reiniciar los servicios
+sudo systemctl restart exactus-rag-backend.service exactus-rag-frontend.service
+
+# Monitorear su estado
+sudo systemctl status exactus-rag-backend.service exactus-rag-frontend.service
 ```
 
 ---
@@ -467,15 +507,17 @@ CHUNK_OVERLAP=50
 
 ## Checklist final
 
-- [ ] Instancia OCI creada (`130.162.58.58`)
-- [ ] SSH funcionando con clave privada
-- [ ] Python 3 instalado (Opción A: Python 3.12 por defecto en Ubuntu 24.04)
-- [ ] Memoria Swap de 4 GB configurada
-- [ ] Proyecto subido y descomprimido sin `env3.11`
-- [ ] `.env` configurado para usar Gemini (`gemini-embedding-2`)
-- [ ] PDFs cargados e indexados de forma incremental
-- [ ] API ejecutándose en el puerto 8000
-- [ ] Firewall de OCI (Subnet Security List) e `iptables` abiertos para el puerto 8000
-- [ ] Endpoint `/health` respondiendo en `http://130.162.58.58:8000/health`
+- [x] Instancia OCI creada (`130.162.58.58`)
+- [x] SSH funcionando con clave privada
+- [x] Python 3 instalado
+- [x] Memoria Swap de 4 GB configurada
+- [x] Proyecto subido y descomprimido sin `env3.11`
+- [x] `.env` configurado unificado (usando OpenAI o Gemini según proveedor)
+- [x] PDFs cargados e indexados de forma incremental sin 429
+- [x] API y Streamlit ejecutándose en segundo plano mediante Systemd
+- [x] Firewall de OCI (Subnet Security List) abierto para puertos 8000 y 8501
+- [x] Cortafuegos iptables abierto en Ubuntu VM para puertos 8000 y 8501
+- [x] Endpoint `/health` respondiendo públicamente en `http://130.162.58.58:8000/health`
+- [x] Web Streamlit accesible públicamente en `http://130.162.58.58:8501`
 
 ¡Listo para usar el despliegue sin Docker en OCI! 🎉
