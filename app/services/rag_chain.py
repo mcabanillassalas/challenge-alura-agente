@@ -106,6 +106,35 @@ def answer_question(
             sources=[],
         )
 
+    # Expansión de contexto: Recuperar la página siguiente (N+1) si no fue ya incluida
+    expanded_docs = []
+    seen_keys = set()
+    for doc in docs:
+        source = doc.metadata.get("source")
+        page = doc.metadata.get("page")
+        if not source or page is None:
+            expanded_docs.append(doc)
+            continue
+
+        key = (source, page)
+        if key not in seen_keys:
+            seen_keys.add(key)
+            expanded_docs.append(doc)
+
+        next_key = (source, page + 1)
+        if next_key not in seen_keys:
+            seen_keys.add(next_key)
+            try:
+                next_page_docs = vectorstore.similarity_search(
+                    "",
+                    k=1,
+                    filter={"$and": [{"source": source}, {"page": page + 1}]}
+                )
+                if next_page_docs:
+                    expanded_docs.append(next_page_docs[0])
+            except Exception:
+                pass
+
     context = "\n\n".join(
         [
             (
@@ -113,7 +142,7 @@ def answer_question(
                 f"Página: {doc.metadata.get('page', 'N/D')}\n"
                 f"{doc.page_content}"
             )
-            for doc in docs
+            for doc in expanded_docs
         ]
     )
 
@@ -134,7 +163,7 @@ def answer_question(
             page=doc.metadata.get("page"),
             excerpt=doc.page_content[:300],
         )
-        for doc in docs
+        for doc in expanded_docs
     ]
 
     content = response.content if hasattr(response, "content") else str(response)
