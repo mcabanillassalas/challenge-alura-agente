@@ -1,0 +1,357 @@
+=== PROMPT SENT TO LLM ===
+Eres un asistente especializado en manuales del ERP Exactus.
+Responde únicamente con base en el contexto recuperado.
+Si la respuesta no está en el contexto, indícalo claramente.
+Cuando sea posible, menciona el nombre del documento y la página.
+
+Contexto recuperado:
+Documento: FA_Manual_Usuario_Facturacion.pdf | Página: 134
+Facturación Clientes!  127 
+ 
+ 
+ 
+Direcciones de 
+Embarque 
+Despliega una tabla de datos donde se definen todas las 
+posibles direcciones de embarque del cliente. Estas 
+direcciones se utilizarán cuando se requiere enviar la 
+mercadería adquirida por el cliente. 
+Consulte "¿Cómo definir las Direcciones de Embarque de un 
+Cliente?" en la página 128 para establecer el procedimiento 
+a seguir para agregar las direcciones del cliente. 
+ 
+Contactos 
+Este botón desplegará una pantalla para registrar los 
+contactos del cliente, con información como el nombre, 
+departamento, cargo, e-mail, teléfono, fax y género. 
+INSTRUCCIONES ESPECÍFICAS 
+¿CÓMO DEFINIR LOS VENDEDORES DE UN 
+CLIENTE? 
+Una vez que se hayan ingresado y grabado todos los datos del cliente, se 
+puede proceder a establecer los vendedores. 
+Para definir los vendedores del cliente, el usuario tiene que ubicarse en la 
+pantalla de creación - modificación de clientes y debe tener desplegado el 
+registro del cliente al cual se le asignarán los vendedores. 
+El procedimiento a seguir es el siguiente: 
+1. Presione el icono 
+ , para desplegar la pantalla de Vendedores del
+
+Documento: FA_Manual_Usuario_Facturacion.pdf | Página: 134
+El procedimiento a seguir es el siguiente: 
+1. Presione el icono 
+ , para desplegar la pantalla de Vendedores del 
+Cliente, la cual contiene el listado de vendedores disponibles en la 
+compañía. 
+ Se desplegará una pantalla similar a la siguiente: 
+ 
+Pantalla de asignación de vendedores 
+2. Seleccione todos los vendedores que podrán atender al cliente 
+específico, pasándolos a la sección denominada Vendedores del
+
+Documento: FA_Manual_Usuario_Facturacion.pdf | Página: 135
+Facturación Clientes!  128 
+ 
+ 
+Cliente. Los vendedores que quedarán en la otra sección no aplicarán 
+a este cliente, sin embargo, pueden ser asignados a otros clientes. 
+ Un mismo vendedor puede atender varios clientes, dado que el listado 
+que se desplegará en todos los clientes es idéntico.  
+ Los vendedores que aparecerán en la pantalla fueron definidos 
+previamente desde el módulo de Administración del Sistema. 
+3. Una vez definidos todos los vendedores asignados al cliente, se 
+procede a grabar los datos, por medio del icono Aceptar, situado en la 
+parte inferior de la pantalla. 
+¿CÓMO DEFINIR LAS DIRECCIONES DE 
+EMBARQUE DE UN CLIENTE? 
+Una vez que se hayan ingresado y grabado todos los datos del cliente, se 
+puede proceder a establecer las direcciones de embarque del mismo. 
+Para definir las direcciones de embarque del cliente, el usuario tiene que 
+ubicarse en la pantalla de creación - modificación de clientes y debe tener 
+desplegado el registro del cliente al que se asignarán las direcciones. 
+El procedimiento es el siguiente: 
+1. Presione el icono 
+ , para desplegar la tabla de datos de 
+Direcciones de Embarque. 
+ 
+Pantalla Direcciones de Embarque
+
+Documento: FA_Manual_Usuario_Facturacion.pdf | Página: 135
+1. Presione el icono 
+ , para desplegar la tabla de datos de 
+Direcciones de Embarque. 
+ 
+Pantalla Direcciones de Embarque 
+2. Elija del submenú de Registro la opción Nuevo, o presione 
+simultáneamente las teclas  Ctrl + N . También se puede ingresar un 
+nuevo registro por medio del icono 
+ . La tabla de datos contiene las 
+siguientes columnas: 
+Dirección: se debe ingresar el código de la dirección de embarque.  
+Este es un campo alfanumérico de 8 dígitos. 
+Descripción: se debe especificar con lujo de detalle la dirección 
+donde embarcar o entregar la mercadería adquirida por el cliente, para 
+ello se debe marcar con el “highlight” la fila del registro y presionar el 
+icono de Detalle Dirección .
+
+Documento: FA_Manual_Usuario_Facturacion.pdf | Página: 115
+Facturación Clientes!  108 
+ 
+ 
+CAPÍTULO 4 
+Clientes! 
+NOTA INTRODUCTORIA 
+La opción de Clientes! del menú principal se ocupa del mantenimiento de los 
+clientes en Facturación; crea, modifica y elimina registros, para luego poder 
+ejecutar transacciones con los clientes existentes. 
+La tabla de clientes existe también en el módulo de Cuentas por Cobrar, 
+por lo tanto, la información puede ser manejada desde cualquiera de estos dos 
+módulos y se verá reflejada en ambos.  Por ejemplo, si en Cuentas por 
+Cobrar se crea el cliente CL0002 con determinadas características, entonces 
+también se desplegará en la tabla de clientes de Facturación. Como se puede 
+observar estos módulos comparten la misma tabla de datos, para asegurar la 
+integridad de la información manejada por el sistema. 
+Esta opción se ejecuta de inmediato, es decir, no existen submenús bajo ell a, 
+sino que se despliega la tabla de datos con el listado de todos los clientes 
+existentes en la base de datos. 
+La pantalla principal de esta opción es la siguiente: 
+ 
+Pantalla de Clientes
+
+Documento: FA_Manual_Usuario_Facturacion.pdf | Página: 116
+cliente, clase del cliente, si el cliente está inactivo o no, moneda del cliente y 
+nivel de precios al que aplica. 
+La pantalla desplegada por esta opción es la siguiente:
+
+Documento: FA_Manual_Usuario_Facturacion.pdf | Página: 116
+Facturación Clientes!  109 
+ 
+ 
+Mediante el uso del botón , se puede invocar el cargador dinámico, que 
+facilita la tarea de cargar información a SoftlandERP al proporcionar una 
+forma simplificada de definir o modificar de manera masiva , la información 
+existente. Para mayor detalle, consultar el manual Cargadores Dinámicos.pdf 
+INGRESO DE DATOS 
+Cuando se agrega un cliente el sistema desplegará una pantalla con un 
+conjunto de carpetas que juntas agrupan la información total del cliente. Para 
+acceder cada carpeta basta con hacer un clic con el ratón sobre la pestaña de la 
+carpeta, o bien se puede oprimir Alt +  la tecla que identifique la letra 
+subrayada en el título de la carpeta. 
+Sin embargo, el primer paso será llenar el campo de código de cliente que es 
+un campo alfanumérico de 8 posiciones. Seguidamente debe especi ficarse el 
+campo para nombre o descripción del cliente que es campo alfanumérico de 30 
+caracteres. 
+DESCRIPCIÓN DE CARPETAS 
+La opción de clientes presenta las siguientes carpetas:  General, Condiciones, 
+Otros, Direcciones, Tarjeta, Rubros Valores, Corporativo y Notas. 
+En cada una de ellas existen una serie de campos donde se debe ingresar la
+
+Documento: FA_Manual_Usuario_Facturacion.pdf | Página: 116
+Otros, Direcciones, Tarjeta, Rubros Valores, Corporativo y Notas. 
+En cada una de ellas existen una serie de campos donde se debe ingresar la 
+información correspondiente al cliente.  Algunas veces esta información está 
+relacionada con clasificaciones que fueron establecidas desde otros módulos. 
+Si no se recuerda n los códigos correspondientes que fueron definidos para 
+cada dato específico, únicamente se debe ubicar el cursor sobre la casilla 
+correspondiente y presionar la tecla  F1, o hacer doble clic con el botón 
+izquierdo del ratón. 
+El sistema desplegará la panta lla correspondiente a la tabla de datos que 
+contiene la información que debe anotarse en el campo específico. Entonces se 
+podrá escoger el registro requerido, marcando con el highlight la línea 
+correspondiente y presionando posteriormente la tecla Enter, o bien con un 
+doble clic. 
+General 
+La información de esta carpeta consiste en aspectos generales de identificación 
+del cliente, tales como: fecha de ingreso, alias, contacto, cargo del contacto, 
+identificación de contribuyente, números de teléfonos y fax, ca tegoría del 
+cliente, clase del cliente, si el cliente está inactivo o no, moneda del cliente y
+
+Documento: FA_Manual_Usuario_Facturacion.pdf | Página: 17
+para la compañía.  Para responder a las difer encias en importancia se puede 
+hacer uso del principio de Pareto. Según este principio se puede clasificar a los 
+clientes en dos categorías básicas: 
+1. Unos relativamente pocos ("pocos vitales"), cada uno de los cuales 
+tiene gran importancia para la compañía. 
+2. Un número relativamente elevado de clientes, cada uno de los cuales 
+sólo tiene importancia modesta para la compañía (los "muchos 
+útiles"). 
+La siguiente figura muestra la relación en forma gráfica: 
+ 
+Análisis de Pareto de los clientes y del volumen de ventas1 
+                                                           
+ 
+Muchos
+Utiles
+Pocos
+Vitales
+Clientes Ventas
+0
+100
+P
+o
+r
+c
+e
+n
+t
+a
+j
+e
+
+Documento: FA_Manual_Usuario_Facturacion.pdf | Página: 17
+Facturación Introducción a Facturación  10 
+ 
+ 
+DEFINICIONES 
+CLIENTE 
+Un cliente es una persona , física o jurídica, que llega y compra un producto o 
+servicio y que espera calidad de servicio y calidad del producto en recompensa 
+por su inversión. 
+En un diccionario, "clientes" generalmente quiere decir aquellos que compran 
+de una empresa, esto es, com pradores. Si se amplía la palabra "clientes" para 
+incluir a todas las personas sobre quienes repercuten los procesos y los 
+productos; entonces se verá que estas personas pueden clasificarse como 
+clientes internos o externos.  Para fines de la funcionalidad de este módulo 
+interesa solamente el concepto de clientes externos, el cual se presenta a 
+continuación. 
+Clientes externos : el término "clientes externos" se usa para indicar las 
+personas, físicas o jurídicas, que no forman parte de la empresa pero sobre 
+quienes repercuten los productos de la misma. 
+En el módulo de Facturación, la palabra "cliente", siempre se referirá a un 
+cliente externo. 
+Ahora bien, los clientes externos pueden clasificarse según su importancia 
+para la compañía.  Para responder a las difer encias en importancia se puede
+
+Documento: FA_Manual_Usuario_Facturacion.pdf | Página: 18
+pedido deberá especificar únicamente las cantidades que la empresa puede 
+suministrar al cliente, para poder continuar con el proceso de venta. 
+Una vez elaborado el pedido, se puede proceder a facturar el mis mo, es decir, 
+a despachar los artículos solicitados junto con el correspondiente cobro. 
+Por otro lado, también es posible a partir del pedido, generar remisiones.  Este 
+proceso consiste en despachar los artículos solicitados junto con un documento 
+que refleje las cantidades y montos establecidos en el pedido.  Una vez que el 
+cliente recibe y acepta la mercadería se generará la factura donde se realiza el 
+cobro correspondiente. 
+En el apartado " Pedidos!", en la página 132, se explica detalladamente el 
+manejo de los pedidos en el sistema. 
+FACTURA 
+Es el documento que formaliza la acción de venta de artículos, y que define 
+exactamente la mercadería que participó en la negociación, así como algunos 
+otros datos de importancia. 
+Este documento registra la entrega de bienes o servicios a un cliente.  Una 
+factura se emite en el momento en que el cliente obtiene y acepta el bien o 
+servicio ofrecido, de manera que su existencia se justifica para tener
+
+Documento: FA_Manual_Usuario_Facturacion.pdf | Página: 18
+Facturación Introducción a Facturación  11 
+ 
+ 
+Este concepto se utiliza cuando se definen las categorías de los clientes, las 
+cuales podrán establecerse basándose en este principio y en otros específicos 
+de interés para la compañía. 
+En la sección " Clientes!" en la página 108 se explica la forma en la que el 
+sistema maneja los clientes de la compañía. 
+PEDIDO 
+El pedido es un documento que la empresa elabora a partir de una orden de 
+compra emitida por un cliente en la que se solicita cierta cantidad de artículos. 
+El objetivo del pedido es garantizarle al cliente que sus necesidades serán 
+satisfechas completamente, o en caso contrario, poder ofrecerle oportunidades 
+alternas para el mismo, al corroborar las existencias disponibles en el 
+inventario antes de realizar la facturación de la mercadería solicitada. 
+De tal modo que el pedido permite evaluar si la orden de compra será 
+satisfecha en su totalidad o no, al realizar las comparaciones de las cantidades 
+solicitadas con las cantidades ex istentes y disponibles en el inventario.  Así, el 
+pedido deberá especificar únicamente las cantidades que la empresa puede
+
+Documento: FA_Manual_Usuario_Facturacion.pdf | Página: 18
+factura se emite en el momento en que el cliente obtiene y acepta el bien o 
+servicio ofrecido, de manera que su existencia se justifica para tener 
+constancia de los bienes que salieron o del servicio prestado, así como para 
+reflejar la transacción en la contabilidad de la compañía. 
+Las facturas pueden generarse tanto para transacciones al contado como al 
+crédito. Para el funcionamiento de este módulo se consid erarán facturas de 
+ambos tipos. 
+El control de facturas que son creadas a crédito se manejan desde el módulo de 
+Cuentas por Cobrar . En este caso únicamente se podrán cargar facturas 
+cuya condición de pago no sea de contado.
+
+Documento: FA_Manual_Usuario_Facturacion.pdf | Página: 136
+archivo SPS.INI una serie de parámetros tal como se explica en la sección 
+"Parámetros de Facturación en el INI" en la página 421. 
+El procedimiento para realizar esta operación se describe a continuación: 
+1. Seleccione el cliente al cual va a crear un correo por medio del 
+highlight. El sistema permite seleccionar varios clientes para crear un 
+mismo correo, para esto deb e seleccionarlos con el highlight.  Esta 
+operación se realiza posicionando primero el cursor del ratón sobre el 
+renglón inicial del bloque, y manteniendo presionado el botón 
+izquierdo del mismo, se desplaza el cursor hacia abajo hasta localizar 
+el renglón final del bloque. 
+2. Una vez seleccionado el o los clientes a los cuales se enviará el correo, 
+el usuario debe presionar el icono  para que el sistema despliegue 
+la pantalla titulada Envío de Correos de Exactus.
+
+Documento: FA_Manual_Usuario_Facturacion.pdf | Página: 136
+Facturación Clientes!  129 
+ 
+ 
+Contacto: se debe ingresar e l nombre completo del contacto en el 
+lugar de embarque. 
+Cargo: se debe especificar el cargo que tiene el contacto en la 
+dirección de embarque. 
+Teléfono 1 y 2 : en estas columnas se ingresa el detalle del número 
+telefónico de la dirección de embarque.  
+Email: se debe especificar la dirección del correo electrónico de la 
+dirección de embarque.  
+Una vez definidas todas las direcciones de embarque que tiene el cliente,  
+se procede a grabar los datos, por medio de la opción de Actualizar o 
+bien Actualizar y Regresar del submenú de Registro. También puede 
+realizarse utilizando los iconos  o  o las teclas Ctrl+A o Ctrl+Y 
+respectivamente.  
+¿CÓMO ENVIAR UN CORREO A UN CLIENTE? 
+La función para envío de correos se puede acceder de dos formas: 
+ desde la tabla principal de la opción por medio del icono  o de la 
+opción Correo bajo el submenú Registro. 
+ desde la ventana de Cliente. 
+Para que la función de correo funcione correctamente se deben ingresar en el 
+archivo SPS.INI una serie de parámetros tal como se explica en la sección 
+"Parámetros de Facturación en el INI" en la página 421.
+
+Documento: FA_Manual_Usuario_Facturacion.pdf | Página: 137
+Archivo: dentro de esta casilla el usuario define el archivo vinculado que sea 
+enviado en conjunto con el correo electrónico. 
+En la parte inferior de la ventana se despliega un espacio donde el usuario 
+ingresa el contenido del correo. 
+6. Una vez que se finaliza la redacción del correo, el usuario debe 
+presionar el icono  para que el mensaje sea enviado.  Si el mensaje 
+es enviado correctamente el sistema envía un mensaje al usuario.
+
+Documento: FA_Manual_Usuario_Facturacion.pdf | Página: 137
+Facturación Clientes!  130 
+ 
+ 
+ 
+Pantalla Principal de Envío de Correos 
+3. Si se selecciona un grupo de clientes y alguno de ellos no tiene 
+especificada la dirección de correo electrónico, el sistema despliega un 
+mensaje de advertencia. 
+4. En la parte superior de la pantalla se presenta una función especial la 
+cual se describe a continuación: 
+Enviar ( ): Por medio de este icono el usuario envía el correo 
+definido para los empleados seleccionados. 
+5. Dentro de la pantalla de envío de correo se debe ingresar la siguiente 
+información: 
+Para: dentro de esta casilla se ingresa la direcc ión "email" del empleado.  El 
+sistema despliega por omisión la dirección ingresada dentro del 
+mantenimiento del empleado.  Cuando el usuario selecciona un grupo, el 
+sistema despliega dentro de esta casilla "*Grupo" que significa que el correo 
+está dirigido a un grupo de empleados. 
+Asunto: Dentro de esta casilla el usuario ingresa el motivo o título 
+identificador del correo electrónico que enviará. 
+Archivo: dentro de esta casilla el usuario define el archivo vinculado que sea 
+enviado en conjunto con el correo electrónico.
+
+Pregunta: Cómo registrar un cliente nuevo?
+
+Responde de forma clara y breve en español. Si la respuesta no está explícitamente en el contexto, dilo claramente y no inventes pasos.
+================================================================================
+=== LLM RESPONSE ===
+La respuesta sobre cómo registrar un cliente nuevo no está explícitamente en el contexto proporcionado. Sin embargo, se menciona que al agregar un cliente, el sistema desplegará una pantalla con un conjunto de carpetas que agrupan la información total del cliente, y que el primer paso es llenar el campo de código de cliente y el campo para nombre o descripción del cliente. Para más detalles, se recomienda consultar el documento completo.
