@@ -277,7 +277,7 @@ def init_state() -> None:
         st.session_state.messages = [
             {
                 "role": "assistant",
-                "content": "Hola. Soy tu asistente RAG para consultar manuales de Exactus. Haz una pregunta en español.",
+                "content": "Hola. Soy tu asistente RAG para consultar los manuales del ERP Exactus.\n Haz una pregunta en español.",
                 "sources": [],
             }
         ]
