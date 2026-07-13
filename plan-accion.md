@@ -145,6 +145,9 @@ Objetivo: exponer el agente mediante una API local y verificar estabilidad.
 ### Tareas
 
 - Crear endpoints `/health` y `/ask`.
+- Implementar **Memoria Conversacional de Sesión (Conversational Retrieval)** en la API y el frontend.
+- Añadir **Normalización de Consultas** (eliminación de caracteres `¿`, `?`, etc.) para dar estabilidad a los embeddings.
+- Implementar **Expansión de Contexto Adyacente** (recuperación de página $N$ y $N+1$ en su totalidad) para manuales secuenciales.
 - Agregar validación de entrada.
 - Incorporar logging básico.
 - Ejecutar pruebas manuales y smoke tests.
@@ -152,8 +155,8 @@ Objetivo: exponer el agente mediante una API local y verificar estabilidad.
 
 ### Entregables
 
-- API FastAPI funcional.
-- Scripts de prueba rápida.
+- API FastAPI funcional con soporte para memoria conversacional.
+- Scripts de prueba rápida y verificación conversacional (`test_memory.py`).
 - Registro de preguntas validadas.
 
 ### Criterio de cierre

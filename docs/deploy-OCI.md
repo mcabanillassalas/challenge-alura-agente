@@ -378,22 +378,22 @@ sudo ufw status
 curl http://130.162.58.58:8000/health
 ```
 
-Prueba una pregunta con Gemini o con OpenAI:
+Prueba una pregunta de seguimiento con memoria conversacional usando OpenAI en OCI VM:
 
-**Consulta a Gemini:**
-
-```bash
-curl -X POST http://130.162.58.58:8000/api/v1/ask \
-  -H "Content-Type: application/json" \
-  -d '{"question":"¿Cómo crear un usuario en Exactus?","llm_provider":"gemini","llm_model":"gemini-2.5-flash"}'
-```
-
-**Consulta a OpenAI:**
+**Consulta RAG con Memoria Conversacional (OpenAI):**
 
 ```bash
 curl -X POST http://130.162.58.58:8000/api/v1/ask \
   -H "Content-Type: application/json" \
-  -d '{"question":"¿Cómo crear un usuario en Exactus?","llm_provider":"openai","llm_model":"gpt-4o-mini"}'
+  -d '{
+    "question": "¿Cuáles son sus carpetas?",
+    "chat_history": [
+      {"role": "user", "content": "¿Cómo registrar un cliente nuevo?"},
+      {"role": "assistant", "content": "Para registrar un cliente debes ir a la opción Clientes en el menú..."}
+    ],
+    "llm_provider": "openai",
+    "llm_model": "gpt-4o-mini"
+  }'
 ```
 
 ---

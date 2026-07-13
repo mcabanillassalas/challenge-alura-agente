@@ -10,7 +10,9 @@ El proyecto permite:
 
 - cargar manuales PDF, CSV o DOCX desde la API o desde el frontend;
 - indexar el contenido en un vectorstore local persistido en `data/processed/`;
-- responder preguntas sobre los manuales con contexto recuperado;
+- responder preguntas sobre los manuales con contexto recuperado, conservando **memoria conversacional de sesión** para admitir preguntas de seguimiento;
+- realizar **expansión de contexto adyacente** (recupera la página original y la página siguiente $N+1$ en su totalidad) para no perder fragmentos continuos;
+- aplicar **normalización de consultas** limpiando signos de puntuación e interrogación (`¿`, `?`, etc.) para estabilizar los resultados de búsqueda semántica;
 - elegir proveedor y modelo para chat e ingesta;
 - validar el servicio con endpoints simples y pruebas mínimas.
 - priorizar el manual correcto en la recuperación usando metadatos del documento y una heurística de tema.
@@ -138,12 +140,28 @@ La UI usa la API en `http://127.0.0.1:8000` por defecto. Si necesitas cambiarla,
 
 ## Ejemplos de uso
 
-### Consultar la API
+### Consultar la API (Consulta Simple)
 
 ```powershell
 curl -X POST http://localhost:8000/api/v1/ask `
   -H "Content-Type: application/json" `
-  -d '{"question":"¿Cómo se crea una factura en Exactus?","llm_provider":"ollama","llm_model":"qwen2.5-coder:7b"}'
+  -d '{"question":"¿Cómo registrar un cliente nuevo?","llm_provider":"openai","llm_model":"gpt-4o-mini"}'
+```
+
+### Consultar la API (Con Memoria de Sesión / Seguimiento)
+
+```powershell
+curl -X POST http://localhost:8000/api/v1/ask `
+  -H "Content-Type: application/json" `
+  -d '{
+    "question": "¿Cuáles son sus carpetas?",
+    "chat_history": [
+      {"role": "user", "content": "¿Cómo registrar un cliente nuevo?"},
+      {"role": "assistant", "content": "Para registrar un cliente debes ir a la opción Clientes en el menú..."}
+    ],
+    "llm_provider": "openai",
+    "llm_model": "gpt-4o-mini"
+  }'
 ```
 
 ### Probar el estado del servicio

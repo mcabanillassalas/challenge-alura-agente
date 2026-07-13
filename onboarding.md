@@ -21,6 +21,9 @@ El objetivo del challenge es demostrar un flujo completo: cargar documentos, gen
 - La ingesta agrega metadatos del manual (`manual_code`, `manual_family`, `document_title`) y la recuperación prioriza el manual correcto según el tema de la consulta.
 - El mapeo temático editable vive en `app/core/manual_routing.py`.
 - El mapeo temático editable se guarda en `app/core/manual_routing.yml`.
+- Se implementó **Memoria Conversacional de Sesión (Conversational Retrieval)**: El backend acepta el historial de chat para condensar preguntas de seguimiento de forma inteligente mediante el LLM.
+- Se implementó **Expansión de Contexto Adyacente**: El sistema recupera todas las partes de la página de destino y la página contigua ($N+1$) para evitar que instrucciones secuenciales queden incompletas.
+- Se incorporó **Normalización de Consultas**: La API limpia los signos `¿`, `?`, `¡`, `!` al inicio/fin del texto para evitar que afecten a la búsqueda de embeddings.
 
 ## Estructura importante
 
