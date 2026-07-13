@@ -9,6 +9,7 @@ Agente de Inteligencia Artificial especializado en la consulta y recuperación d
 Este proyecto resuelve la consulta de información sobre manuales complejos del ERP Exactus (como Facturación, Cuentas por Cobrar, etc.) utilizando IA. El agente RAG extrae, indexa y recupera fragmentos específicos de los manuales en formato PDF, CSV o DOCX para generar respuestas precisas, contextualizadas y citando el documento y página correspondiente de origen.
 
 ### Características Clave
+
 - **Memoria Conversacional de Sesión (Conversational Retrieval)**: Admite preguntas de seguimiento de forma inteligente mediante condensación de consultas a través del LLM.
 - **Normalización de Consultas**: Elimina signos de interrogación/exclamación y puntuaciones (`¿`, `?`, etc.) antes de buscar en la base de datos vectorial para estabilizar el cálculo de distancias de los embeddings.
 - **Expansión de Contexto Adyacente**: Recupera todas las partes de la página de destino y su página contigua ($N+1$) en su totalidad para garantizar que instrucciones de pasos continuos no queden incompletas.
@@ -27,7 +28,7 @@ graph TD
     A[Archivos PDF/CSV/DOCX] -->|Scripts de Ingesta / Carga Frontend| B[Fragmentación Text Splitter]
     B -->|Pacing Automático| C[Embeddings OpenAI / Gemini / Ollama]
     C -->|Persistencia Local| D[(Chroma DB)]
-    
+
     E[Usuario en Frontend Streamlit] -->|Pregunta + Historial de Chat| F[FastAPI Endpoint: /api/v1/ask]
     F -->|Condensador LLM| G[Consulta Independiente Condensada]
     G -->|Limpieza de Signos ¿ ?| H[Normalizador de Consultas]
@@ -39,6 +40,7 @@ graph TD
 ```
 
 ### Flujo de Consulta
+
 1. **Condensación**: El backend FastAPI recibe la pregunta del usuario y el historial del chat actual. Si hay historial, reformula la pregunta mediante LLM.
 2. **Normalización**: El query se limpia de caracteres de puntuación para evitar sesgos en el embedding.
 3. **Filtro Temático**: Se evalúa la consulta frente a las reglas definidas en `app/core/manual_routing.yml` para restringir la búsqueda al manual más relevante (ej: `FA` para Facturación).
@@ -65,10 +67,12 @@ graph TD
 ## 4. Instrucciones para Ejecutar el Proyecto
 
 ### Requisitos Previos
+
 - Python 3.11 instalado.
 - Cuenta de OpenAI, Gemini u Ollama configurada localmente.
 
 ### A. Configuración del Entorno y Dependencias
+
 1. Clona el repositorio e ingresa a la carpeta del proyecto:
    ```bash
    git clone https://github.com/mcabanillassalas/challenge-alura-agente.git
@@ -89,6 +93,7 @@ graph TD
      ```
 
 3. Crea un archivo `.env` en la raíz del proyecto y configura tus credenciales:
+
    ```env
    # Proveedor por defecto (openai, gemini, ollama)
    LLM_PROVIDER=openai
@@ -109,7 +114,9 @@ graph TD
    ```
 
 ### B. Ingesta Inicial de Documentos
+
 Coloca tus archivos PDF en la ruta `data/raw/exactus/` y procesa los documentos:
+
 - **Ingesta incremental automática (pacing incorporado):**
   ```bash
   python -m scripts.ingest_incremental
@@ -120,17 +127,23 @@ Coloca tus archivos PDF en la ruta `data/raw/exactus/` y procesa los documentos:
   ```
 
 ### C. Ejecución del Servidor Backend (FastAPI)
+
 Levanta la API FastAPI (por defecto corre en el puerto 8000):
+
 ```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
+
 Verifica su funcionamiento abriendo en tu navegador: `http://localhost:8000/health`.
 
 ### D. Ejecución del Servidor Frontend (Streamlit)
+
 En una nueva terminal con el entorno virtual activo, arranca Streamlit (puerto 8501):
+
 ```bash
 streamlit run frontend/streamlit_app.py
 ```
+
 Abre en tu navegador `http://localhost:8501` para interactuar con la interfaz del agente.
 
 ---
@@ -138,6 +151,7 @@ Abre en tu navegador `http://localhost:8501` para interactuar con la interfaz de
 ## 5. Preguntas que el Agente Puede Responder
 
 El agente está diseñado para responder a dudas operativas, configuración, ingreso de catálogos y procesos basados en los manuales indexados:
+
 1. `¿Cómo registrar un cliente nuevo?` (Facturación)
 2. `¿Cuáles son sus carpetas?` (Pregunta de seguimiento y memoria conversacional)
 3. `¿Cómo definir las direcciones de embarque de un cliente?`
@@ -149,23 +163,25 @@ El agente está diseñado para responder a dudas operativas, configuración, ing
 ## 6. Ejemplos de Respuestas Generadas por el Agente
 
 ### Ejemplo 1: Consulta Inicial
+
 - **Pregunta:** `¿Cómo registrar un cliente nuevo?`
 - **Respuesta generada:**
   > Para registrar un cliente nuevo en el ERP Exactus, debes realizar los siguientes pasos:
-  > 
+  >
   > 1. Accede a la opción **Clientes!** en el menú principal de Facturación. Esto desplegará el listado completo de clientes.
   > 2. Introduce un código alfanumérico de hasta 8 posiciones en el campo de **código de cliente**.
   > 3. Especifica el nombre o descripción del cliente (campo alfanumérico de hasta 30 caracteres).
-  > 4. Llena la información correspondiente a las diferentes carpetas que el sistema despliega (*General, Condiciones, Otros, Direcciones, Tarjeta, Rubros Valores, Corporativo y Notas*).
+  > 4. Llena la información correspondiente a las diferentes carpetas que el sistema despliega (_General, Condiciones, Otros, Direcciones, Tarjeta, Rubros Valores, Corporativo y Notas_).
   > 5. Graba los datos ingresados.
-  > 
-  > *Referencia: FA_Manual_Usuario_Facturacion.pdf — página: 116*
+  >
+  > _Referencia: FA_Manual_Usuario_Facturacion.pdf — página: 116_
 
 ### Ejemplo 2: Pregunta de Seguimiento (Usando Memoria Conversacional)
+
 - **Pregunta:** `¿Cuáles son sus carpetas?`
 - **Respuesta generada:**
   > Las carpetas disponibles al registrar un cliente en el ERP Exactus son las siguientes:
-  > 
+  >
   > 1. **General**: Información y aspectos generales de identificación.
   > 2. **Condiciones**: Configuración de términos de pago y facturación.
   > 3. **Otros**: Información adicional parametrizada.
@@ -174,5 +190,5 @@ El agente está diseñado para responder a dudas operativas, configuración, ing
   > 6. **Rubros Valores**: Rubros parametrizados configurables.
   > 7. **Corporativo**: Ajustes de cuentas de corporación.
   > 8. **Notas**: Espacio para observaciones del cliente.
-  > 
-  > *Referencia: FA_Manual_Usuario_Facturacion.pdf — página: 116*
+  >
+  > _Referencia: FA_Manual_Usuario_Facturacion.pdf — página: 116_
