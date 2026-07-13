@@ -11,6 +11,7 @@ def ask_question(payload: AskRequest) -> AskResponse:
     try:
         return answer_question(
             payload.question,
+            chat_history=payload.chat_history,
             llm_provider=payload.llm_provider,
             llm_model=payload.llm_model,
         )

@@ -48,11 +48,14 @@ def get_health() -> dict[str, Any]:
 
 
 
-def ask_question(question: str, llm_provider: str, llm_model: str) -> dict[str, Any]:
+def ask_question(
+    question: str, llm_provider: str, llm_model: str, chat_history: list[dict[str, str]] = []
+) -> dict[str, Any]:
     response = requests.post(
         f"{API_BASE_URL}/api/v1/ask",
         json={
             "question": question,
+            "chat_history": chat_history,
             "llm_provider": llm_provider,
             "llm_model": llm_model,
         },
@@ -360,7 +363,14 @@ def main() -> None:
         with st.chat_message("assistant"):
             with st.spinner("Consultando manuales y generando respuesta..."):
                 try:
-                    result = ask_question(question, llm_provider, llm_model)
+                    # Obtener el historial excluyendo el último mensaje del usuario
+                    history_payload = st.session_state.messages[:-1]
+                    chat_history = [
+                        {"role": m["role"], "content": m["content"]}
+                        for m in history_payload
+                        if m["role"] in ["user", "assistant"]
+                    ]
+                    result = ask_question(question, llm_provider, llm_model, chat_history)
                     answer = result.get("answer", "No se recibió respuesta.")
                     sources = result.get("sources", [])
 

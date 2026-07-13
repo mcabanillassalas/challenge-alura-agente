@@ -1,7 +1,7 @@
 from app.core.config import settings
 from app.core.manual_routing import infer_manual_code, normalize_text
 from app.core.prompts import SYSTEM_PROMPT
-from app.schemas.ask import AskResponse, SourceItem
+from app.schemas.ask import AskResponse, SourceItem, MessageItem
 from app.services.vectorstore import get_vectorstore
 
 
@@ -83,11 +83,33 @@ def _get_llm(provider_override: str | None = None, model_override: str | None = 
 
 def answer_question(
     question: str,
+    chat_history: list[MessageItem] = [],
     llm_provider: str | None = None,
     llm_model: str | None = None,
 ) -> AskResponse:
+    # Si hay historial de chat, reformular la pregunta de seguimiento en una consulta independiente
+    query_for_search = question
+    if chat_history:
+        llm = _get_llm(llm_provider, llm_model)
+        history_str = "\n".join([f"{m.role}: {m.content}" for m in chat_history])
+        condense_prompt = (
+            "Dado el siguiente historial de conversación y una pregunta de seguimiento, "
+            "reformula la pregunta para que sea una consulta de búsqueda independiente y completa en español "
+            "que haga referencia clara a los temas discutidos anteriormente, sin pronombres y de forma directa. "
+            "Genera únicamente la pregunta reformulada, nada de explicaciones ni introducciones adicionales.\n\n"
+            f"Historial de conversación:\n{history_str}\n\n"
+            f"Pregunta de seguimiento: {question}\n\n"
+            "Pregunta reformulada:"
+        )
+        try:
+            response_condense = llm.invoke(condense_prompt)
+            content_condense = response_condense.content if hasattr(response_condense, "content") else str(response_condense)
+            query_for_search = content_condense.strip()
+        except Exception:
+            pass
+
     # Limpiar signos de interrogación y puntuación iniciales/finales para mejorar consistencia en embeddings
-    clean_question = question.strip().strip("¿?¡!.,;\"'")
+    clean_question = query_for_search.strip().strip("¿?¡!.,;\"'")
     
     vectorstore = get_vectorstore()
     target_manual_code = _infer_manual_code(clean_question)
@@ -159,10 +181,17 @@ def answer_question(
     )
 
     llm = _get_llm(llm_provider, llm_model)
+    history_context = ""
+    if chat_history:
+        history_context = "Historial de conversación reciente:\n" + "\n".join(
+            [f"{m.role.capitalize()}: {m.content}" for m in chat_history[-6:]]
+        ) + "\n\n"
+
     prompt = (
         f"{SYSTEM_PROMPT}\n\n"
+        f"{history_context}"
         f"Contexto recuperado:\n{context}\n\n"
-        f"Pregunta: {question}\n\n"
+        f"Pregunta actual del usuario: {question}\n\n"
         "Responde de forma clara y breve en español. "
         "Ten en cuenta que términos como 'agregar', 'crear' o 'ingresar' son sinónimos de 'registrar' en este contexto. "
         "Si la respuesta o el procedimiento relacionado no está en el contexto, dilo claramente y no inventes pasos."
