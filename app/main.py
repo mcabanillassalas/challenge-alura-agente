@@ -8,7 +8,7 @@ from app.core.config import settings
 app = FastAPI(
     title=settings.app_name,
     version="0.2.0",
-    description="API para consultas RAG sobre manuales PDF de Exactus"
+    description="API para consultas RAG sobre manuales PDF de ERP Exactus"
 )
 
 app.include_router(health_router)

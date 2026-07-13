@@ -484,12 +484,14 @@ sudo systemctl status exactus-rag-backend.service exactus-rag-frontend.service
 Para evitar acceder al RAG por direcciones IP desprotegidas y asegurar la conexión web con HTTPS gratuito, se utiliza **DuckDNS** (subdominio dinámico gratuito) y **Caddy Server** (como proxy inverso con emisión y renovación automática de certificados SSL Let's Encrypt).
 
 ### A. Registrar y Apuntar el Dominio
+
 1. Crea una cuenta en [DuckDNS](https://www.duckdns.org/).
 2. Registra un subdominio (ej. `challenge-alura.duckdns.org`).
 3. En el panel de control de DuckDNS, reemplaza la IP actual con la IP pública de tu servidor OCI (`130.162.58.58`) y presiona **update ip**.
 
 ### B. Abrir Puertos Web (80 y 443)
-1. **Consola Web de OCI:** En la *Default Security List* de tu subred, añade dos reglas de ingreso para permitir tráfico TCP en los puertos **80** (HTTP) y **443** (HTTPS) desde cualquier origen (`0.0.0.0/0`).
+
+1. **Consola Web de OCI:** En la _Default Security List_ de tu subred, añade dos reglas de ingreso para permitir tráfico TCP en los puertos **80** (HTTP) y **443** (HTTPS) desde cualquier origen (`0.0.0.0/0`).
 2. **Máquina Virtual (Terminal SSH):** Ejecuta:
    ```bash
    sudo iptables -I INPUT 1 -p tcp --dport 80 -j ACCEPT
@@ -498,7 +500,9 @@ Para evitar acceder al RAG por direcciones IP desprotegidas y asegurar la conexi
    ```
 
 ### C. Instalar Caddy Server en Ubuntu
+
 Ejecuta la instalación oficial:
+
 ```bash
 sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
 curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
@@ -508,11 +512,15 @@ sudo apt install -y caddy
 ```
 
 ### D. Configurar el Proxy Inverso (Caddyfile)
+
 Edita el archivo de configuración en `/etc/caddy/Caddyfile`:
+
 ```bash
 sudo nano /etc/caddy/Caddyfile
 ```
+
 E ingresa el mapeo web:
+
 ```caddy
 challenge-alura.duckdns.org {
     # Redirigir la API del backend
@@ -527,7 +535,9 @@ challenge-alura.duckdns.org {
 ```
 
 ### E. Iniciar Caddy
+
 Aplica los cambios reiniciando el servicio:
+
 ```bash
 sudo systemctl daemon-reload
 sudo systemctl enable caddy
