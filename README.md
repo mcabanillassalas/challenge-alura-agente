@@ -1,4 +1,4 @@
-# Exactus RAG Agent - Challenge Alura Agente
+# ERP Exactus RAG Agent - Challenge Alura Agente
 
 Agente de Inteligencia Artificial especializado en la consulta y recuperación de información de los manuales de usuario del ERP Exactus. Desarrollado en Python con una arquitectura RAG (Retrieval-Augmented Generation) parametrizada, FastAPI para el backend, y un frontend interactivo en Streamlit.
 
