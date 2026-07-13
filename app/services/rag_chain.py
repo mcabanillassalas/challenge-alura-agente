@@ -106,7 +106,7 @@ def answer_question(
             sources=[],
         )
 
-    # Expansión de contexto: Recuperar la página siguiente (N+1) si no fue ya incluida
+    # Expansión de contexto: Recuperar todas las partes de la página original y de la página siguiente (N+1)
     expanded_docs = []
     seen_keys = set()
     for doc in docs:
@@ -116,22 +116,31 @@ def answer_question(
             expanded_docs.append(doc)
             continue
 
+        # Recuperar todas las partes de la página original (N)
         key = (source, page)
         if key not in seen_keys:
             seen_keys.add(key)
-            expanded_docs.append(doc)
+            try:
+                page_docs = vectorstore.similarity_search(
+                    "",
+                    k=4,
+                    filter={"$and": [{"source": source}, {"page": page}]}
+                )
+                expanded_docs.extend(page_docs)
+            except Exception:
+                expanded_docs.append(doc)
 
+        # Recuperar todas las partes de la página siguiente (N+1)
         next_key = (source, page + 1)
         if next_key not in seen_keys:
             seen_keys.add(next_key)
             try:
                 next_page_docs = vectorstore.similarity_search(
                     "",
-                    k=1,
+                    k=4,
                     filter={"$and": [{"source": source}, {"page": page + 1}]}
                 )
-                if next_page_docs:
-                    expanded_docs.append(next_page_docs[0])
+                expanded_docs.extend(next_page_docs)
             except Exception:
                 pass
 
