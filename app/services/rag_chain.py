@@ -86,19 +86,22 @@ def answer_question(
     llm_provider: str | None = None,
     llm_model: str | None = None,
 ) -> AskResponse:
+    # Limpiar signos de interrogación y puntuación iniciales/finales para mejorar consistencia en embeddings
+    clean_question = question.strip().strip("¿?¡!.,;\"'")
+    
     vectorstore = get_vectorstore()
-    target_manual_code = _infer_manual_code(question)
+    target_manual_code = _infer_manual_code(clean_question)
     fetch_k = max(settings.top_k * 4, 8)
     search_kwargs = {"k": fetch_k}
     if target_manual_code:
         search_kwargs["filter"] = {"manual_code": target_manual_code}
 
-    docs_with_scores = vectorstore.similarity_search_with_score(question, **search_kwargs)
+    docs_with_scores = vectorstore.similarity_search_with_score(clean_question, **search_kwargs)
 
     if not docs_with_scores and target_manual_code:
-        docs_with_scores = vectorstore.similarity_search_with_score(question, k=fetch_k)
+        docs_with_scores = vectorstore.similarity_search_with_score(clean_question, k=fetch_k)
 
-    docs = _rank_documents(question, docs_with_scores)[: settings.top_k]
+    docs = _rank_documents(clean_question, docs_with_scores)[: settings.top_k]
 
     if not docs:
         return AskResponse(
@@ -161,7 +164,8 @@ def answer_question(
         f"Contexto recuperado:\n{context}\n\n"
         f"Pregunta: {question}\n\n"
         "Responde de forma clara y breve en español. "
-        "Si la respuesta no está explícitamente en el contexto, dilo claramente y no inventes pasos."
+        "Ten en cuenta que términos como 'agregar', 'crear' o 'ingresar' son sinónimos de 'registrar' en este contexto. "
+        "Si la respuesta o el procedimiento relacionado no está en el contexto, dilo claramente y no inventes pasos."
     )
 
     response = llm.invoke(prompt)
