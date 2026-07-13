@@ -1,208 +1,178 @@
-# Proyecto Challenge Alura Agente
+# Exactus RAG Agent - Challenge Alura Agente
 
-## Exactus RAG Agent
+Agente de Inteligencia Artificial especializado en la consulta y recuperación de información de los manuales de usuario del ERP Exactus. Desarrollado en Python con una arquitectura RAG (Retrieval-Augmented Generation) parametrizada, FastAPI para el backend, y un frontend interactivo en Streamlit.
 
-Agente RAG en Python para consultar manuales PDF del ERP Exactus con FastAPI, LangChain, Chroma y un frontend en Streamlit.
+---
 
-## Resumen
+## 1. Descripción General del Proyecto
 
-El proyecto permite:
+Este proyecto resuelve la consulta de información sobre manuales complejos del ERP Exactus (como Facturación, Cuentas por Cobrar, etc.) utilizando IA. El agente RAG extrae, indexa y recupera fragmentos específicos de los manuales en formato PDF, CSV o DOCX para generar respuestas precisas, contextualizadas y citando el documento y página correspondiente de origen.
 
-- cargar manuales PDF, CSV o DOCX desde la API o desde el frontend;
-- indexar el contenido en un vectorstore local persistido en `data/processed/`;
-- responder preguntas sobre los manuales con contexto recuperado, conservando **memoria conversacional de sesión** para admitir preguntas de seguimiento;
-- realizar **expansión de contexto adyacente** (recupera la página original y la página siguiente $N+1$ en su totalidad) para no perder fragmentos continuos;
-- aplicar **normalización de consultas** limpiando signos de puntuación e interrogación (`¿`, `?`, etc.) para estabilizar los resultados de búsqueda semántica;
-- elegir proveedor y modelo para chat e ingesta;
-- validar el servicio con endpoints simples y pruebas mínimas.
-- priorizar el manual correcto en la recuperación usando metadatos del documento y una heurística de tema.
-- extender fácilmente las reglas de enrutamiento desde `app/core/manual_routing.py`.
-- editar el mapeo temático sin tocar Python, usando `app/core/manual_routing.yml`.
+### Características Clave
+- **Memoria Conversacional de Sesión (Conversational Retrieval)**: Admite preguntas de seguimiento de forma inteligente mediante condensación de consultas a través del LLM.
+- **Normalización de Consultas**: Elimina signos de interrogación/exclamación y puntuaciones (`¿`, `?`, etc.) antes de buscar en la base de datos vectorial para estabilizar el cálculo de distancias de los embeddings.
+- **Expansión de Contexto Adyacente**: Recupera todas las partes de la página de destino y su página contigua ($N+1$) en su totalidad para garantizar que instrucciones de pasos continuos no queden incompletas.
+- **Enrutamiento Temático Inteligente**: Prioriza de manera automática el manual correspondiente (ej: Facturación vs. Cuentas por Cobrar) según las palabras clave configuradas en `app/core/manual_routing.yml`.
+- **Ingesta Incremental y Pacing**: Permite la carga de nuevos archivos sin reconstruir el índice completo, con tasa de peticiones regulada para evitar cuotas agotadas (429) en proveedores como Gemini.
+- **Multi-Proveedor Dinámico**: Cambia dinámicamente entre OpenAI (GPT-4o-mini), Gemini (Gemini 2.5 Flash) y modelos locales de Ollama (Qwen2.5-Coder) desde la interfaz de usuario.
 
-## Estructura principal
+---
 
-- `app/`: backend FastAPI, configuración, esquemas y servicios RAG.
-- `frontend/`: interfaz Streamlit.
-- `scripts/`: ingesta, reconstrucción de índice y smoke test.
-- `data/raw/exactus/`: documentos fuente.
-- `data/processed/`: vectorstore persistido.
-- `docs/`: notas de arquitectura y preguntas.
-- `tests/`: pruebas automáticas básicas.
+## 2. Arquitectura de la Solución Implementada
 
-## Requisitos
+La solución se divide en tres capas principales: Ingesta, Almacenamiento/Recuperación Semántica y Generación.
 
-- Python 3.11.
-- Un entorno virtual activo.
-- `pip` actualizado.
-- Opcional: Ollama, OpenAI o Gemini según el proveedor que vayas a usar.
-
-## Instalación local
-
-En Windows PowerShell:
-
-```powershell
-cd D:\DevALURA\challenge-alura-agente\agente-alura-rag
-.\env3.11\Scripts\Activate.ps1
-pip install -r requirements.txt
+```mermaid
+graph TD
+    A[Archivos PDF/CSV/DOCX] -->|Scripts de Ingesta / Carga Frontend| B[Fragmentación Text Splitter]
+    B -->|Pacing Automático| C[Embeddings OpenAI / Gemini / Ollama]
+    C -->|Persistencia Local| D[(Chroma DB)]
+    
+    E[Usuario en Frontend Streamlit] -->|Pregunta + Historial de Chat| F[FastAPI Endpoint: /api/v1/ask]
+    F -->|Condensador LLM| G[Consulta Independiente Condensada]
+    G -->|Limpieza de Signos ¿ ?| H[Normalizador de Consultas]
+    H -->|Mapeo YAML de Temas| I[Filtro por manual_code]
+    I -->|Búsqueda Semántica| D
+    D -->|Recupera Página N y N+1| J[Ventana de Contexto Adyacente]
+    J -->|Prompt + Contexto + Historial| K[LLM: Generación de Respuesta]
+    K -->|Respuesta con Citas de Páginas| E
 ```
 
-Si prefieres crear un entorno nuevo:
+### Flujo de Consulta
+1. **Condensación**: El backend FastAPI recibe la pregunta del usuario y el historial del chat actual. Si hay historial, reformula la pregunta mediante LLM.
+2. **Normalización**: El query se limpia de caracteres de puntuación para evitar sesgos en el embedding.
+3. **Filtro Temático**: Se evalúa la consulta frente a las reglas definidas en `app/core/manual_routing.yml` para restringir la búsqueda al manual más relevante (ej: `FA` para Facturación).
+4. **Recuperación y Expansión**: Se consulta Chroma DB. Para el chunk obtenido, se expande la recuperación a todos los chunks de esa página y de la página siguiente ($N+1$).
+5. **Generación**: El LLM (OpenAI, Gemini u Ollama) recibe el contexto extendido y genera la respuesta final estructurada en español.
 
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-```
+---
 
-## Variables de entorno
+## 3. Tecnologías y Herramientas Utilizadas
 
-El archivo `.env` se carga automáticamente desde la raíz del proyecto.
+- **Python 3.11**: Lenguaje de programación principal.
+- **FastAPI**: Backend para la API de alta velocidad, validando payloads mediante Pydantic.
+- **Streamlit**: Interfaz web reactiva para el chat interactivo, la visualización de fuentes y la carga incremental de manuales.
+- **LangChain / LangChain Community**: Orquestador principal de la cadena RAG, prompts y conectores de LLM.
+- **Chroma DB**: Base de datos vectorial embebida y persistida en disco.
+- **OpenAI (GPT-4o-mini / text-embedding-3-small)**: Proveedor principal y más veloz para producción.
+- **Gemini (Gemini 2.5 Flash / gemini-embedding-001)**: Proveedor alternativo en la nube.
+- **Ollama (Qwen2.5-Coder / nomic-embed-text)**: Soporte para ejecución en local 100% offline.
+- **Systemd**: Gestor de procesos en segundo plano para la persistencia del frontend y backend en servidores Linux (Ubuntu en OCI).
+- **Caddy Server + DuckDNS**: Servidor de proxy inverso y subdominio dinámico para habilitar SSL (HTTPS) automático mediante Let's Encrypt en producción.
 
-### Configuración general
+---
 
-```env
-LLM_PROVIDER=ollama
-EMBEDDING_PROVIDER=ollama
-CHROMA_PERSIST_DIRECTORY=./data/processed
-DOCS_PATH=./data/raw/exactus
-TOP_K=4
-CHUNK_SIZE=1200
-CHUNK_OVERLAP=150
-```
+## 4. Instrucciones para Ejecutar el Proyecto
 
-### Ollama
+### Requisitos Previos
+- Python 3.11 instalado.
+- Cuenta de OpenAI, Gemini u Ollama configurada localmente.
 
-```env
-OLLAMA_BASE_URL=http://127.0.0.1:11434
-OLLAMA_LLM_MODEL=qwen2.5-coder:7b
-OLLAMA_EMBEDDING_MODEL=nomic-embed-text
-```
+### A. Configuración del Entorno y Dependencias
+1. Clona el repositorio e ingresa a la carpeta del proyecto:
+   ```bash
+   git clone https://github.com/mcabanillassalas/challenge-alura-agente.git
+   cd challenge-alura-agente/agente-alura-rag
+   ```
+2. Crea e inicia tu entorno virtual e instala las dependencias:
+   - **En Windows (PowerShell):**
+     ```powershell
+     python -m venv env3.11
+     .\env3.11\Scripts\Activate.ps1
+     pip install -r requirements.txt
+     ```
+   - **En Linux (Ubuntu):**
+     ```bash
+     python3 -m venv venv
+     source venv/bin/activate
+     pip install -r requirements.txt
+     ```
 
-### OpenAI
+3. Crea un archivo `.env` en la raíz del proyecto y configura tus credenciales:
+   ```env
+   # Proveedor por defecto (openai, gemini, ollama)
+   LLM_PROVIDER=openai
+   EMBEDDING_PROVIDER=openai
 
-```env
-OPENAI_API_KEY=tu_api_key
-OPENAI_CHAT_MODEL=gpt-4o-mini
-OPENAI_EMBEDDING_MODEL=text-embedding-3-small
-```
+   # OpenAI API Key
+   OPENAI_API_KEY=tu_openai_key
 
-### Gemini
+   # Gemini API Key
+   GEMINI_API_KEY=tu_gemini_key
 
-```env
-GEMINI_API_KEY=tu_api_key
-GEMINI_CHAT_MODEL=gemini-2.5-flash
-GEMINI_EMBEDDING_MODEL=gemini-embedding-001
-```
+   # Configuración de Chroma
+   CHROMA_PERSIST_DIRECTORY=./data/processed
+   DOCS_PATH=./data/raw/exactus
+   TOP_K=4
+   CHUNK_SIZE=1200
+   CHUNK_OVERLAP=150
+   ```
 
-## Ingesta e índice
-
-Coloca los manuales en `data/raw/exactus/` y ejecuta:
-
-- **Ingesta incremental completa:**
-  ```powershell
+### B. Ingesta Inicial de Documentos
+Coloca tus archivos PDF en la ruta `data/raw/exactus/` y procesa los documentos:
+- **Ingesta incremental automática (pacing incorporado):**
+  ```bash
   python -m scripts.ingest_incremental
   ```
-- **Ingesta incremental por archivo individual / Reanudación:**
-  ```powershell
-  python -m scripts.ingest_pdf_incremental NOMBRE_EL_ARCHIVO.pdf [start_index]
-  ```
-- **Reconstrucción del índice desde cero (Tradicional):**
-  ```powershell
+- **Reconstrucción desde cero del índice:**
+  ```bash
   python -m scripts.rebuild_index
   ```
 
-El sistema detecta automáticamente tu `EMBEDDING_PROVIDER` y regula la tasa de peticiones y loteado para evitar errores de cuota (429).
-La carga desde el frontend indexa solo los archivos recién subidos; no rehace todo el corpus en cada envío.
-
-Debajo de la sección de carga hay una acción de reindexación que reutiliza el mismo proveedor y modelo seleccionados para cargar documentos.
-
-## Ejecutar la API
-
-```powershell
+### C. Ejecución del Servidor Backend (FastAPI)
+Levanta la API FastAPI (por defecto corre en el puerto 8000):
+```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
+Verifica su funcionamiento abriendo en tu navegador: `http://localhost:8000/health`.
 
-La API expone:
-
-- `GET /health`
-- `POST /api/v1/ask`
-- `POST /api/v1/ingest`
-
-## Ejecutar el frontend
-
-En otra terminal:
-
-```powershell
+### D. Ejecución del Servidor Frontend (Streamlit)
+En una nueva terminal con el entorno virtual activo, arranca Streamlit (puerto 8501):
+```bash
 streamlit run frontend/streamlit_app.py
 ```
+Abre en tu navegador `http://localhost:8501` para interactuar con la interfaz del agente.
 
-La UI usa la API en `http://127.0.0.1:8000` por defecto. Si necesitas cambiarla, define `API_BASE_URL`.
+---
 
-## Ejemplos de uso
+## 5. Preguntas que el Agente Puede Responder
 
-### Consultar la API (Consulta Simple)
+El agente está diseñado para responder a dudas operativas, configuración, ingreso de catálogos y procesos basados en los manuales indexados:
+1. `¿Cómo registrar un cliente nuevo?` (Facturación)
+2. `¿Cuáles son sus carpetas?` (Pregunta de seguimiento y memoria conversacional)
+3. `¿Cómo definir las direcciones de embarque de un cliente?`
+4. `¿Cómo definir los vendedores de un cliente?`
+5. `¿Cómo enviar un correo a un cliente?`
 
-```powershell
-curl -X POST http://localhost:8000/api/v1/ask `
-  -H "Content-Type: application/json" `
-  -d '{"question":"¿Cómo registrar un cliente nuevo?","llm_provider":"openai","llm_model":"gpt-4o-mini"}'
-```
+---
 
-### Consultar la API (Con Memoria de Sesión / Seguimiento)
+## 6. Ejemplos de Respuestas Generadas por el Agente
 
-```powershell
-curl -X POST http://localhost:8000/api/v1/ask `
-  -H "Content-Type: application/json" `
-  -d '{
-    "question": "¿Cuáles son sus carpetas?",
-    "chat_history": [
-      {"role": "user", "content": "¿Cómo registrar un cliente nuevo?"},
-      {"role": "assistant", "content": "Para registrar un cliente debes ir a la opción Clientes en el menú..."}
-    ],
-    "llm_provider": "openai",
-    "llm_model": "gpt-4o-mini"
-  }'
-```
+### Ejemplo 1: Consulta Inicial
+- **Pregunta:** `¿Cómo registrar un cliente nuevo?`
+- **Respuesta generada:**
+  > Para registrar un cliente nuevo en el ERP Exactus, debes realizar los siguientes pasos:
+  > 
+  > 1. Accede a la opción **Clientes!** en el menú principal de Facturación. Esto desplegará el listado completo de clientes.
+  > 2. Introduce un código alfanumérico de hasta 8 posiciones en el campo de **código de cliente**.
+  > 3. Especifica el nombre o descripción del cliente (campo alfanumérico de hasta 30 caracteres).
+  > 4. Llena la información correspondiente a las diferentes carpetas que el sistema despliega (*General, Condiciones, Otros, Direcciones, Tarjeta, Rubros Valores, Corporativo y Notas*).
+  > 5. Graba los datos ingresados.
+  > 
+  > *Referencia: FA_Manual_Usuario_Facturacion.pdf — página: 116*
 
-### Probar el estado del servicio
-
-```powershell
-curl http://localhost:8000/health
-```
-
-## Pruebas rápidas
-
-```powershell
-pytest
-python -m scripts.smoke_test
-```
-
-## Arquitectura
-
-El flujo general es:
-
-1. Los documentos se almacenan en `data/raw/exactus/`.
-2. La ingesta extrae texto, agrega metadatos del manual, lo divide en chunks y genera embeddings.
-3. Los embeddings se persisten en Chroma dentro de `data/processed/`.
-4. La API consulta el vectorstore, prioriza el manual más específico según la consulta y arma la respuesta con contexto recuperado.
-5. El frontend Streamlit permite preguntar, cargar documentos y revisar fuentes.
-
-Las reglas temáticas viven en `app/core/manual_routing.py`, así que puedes agregar nuevas palabras clave o nuevos manuales sin tocar la lógica principal del RAG.
-
-Si prefieres editar el mapa desde un archivo, usa `app/core/manual_routing.yml`.
-
-Ejemplos útiles para ampliar el mapa: "alta de usuarios", "asignar permisos", "kardex", "movimiento de inventario", "conciliación bancaria" y "cálculo de nómina".
-
-El archivo YAML admite pesos por regla, así que las frases más específicas pueden tener prioridad sobre palabras sueltas.
-
-Cuando el router identifica un módulo, la recuperación primero busca dentro de ese manual usando `manual_code` para reducir ruido entre documentos.
-
-Para más detalle, revisa [docs/architecture.md](docs/architecture.md) y [plan-accion.md](plan-accion.md).
-
-## Notas
-
-- El provider por defecto del backend es `ollama`.
-- La selección de modelo también se puede hacer desde el frontend.
-- Los archivos subidos se guardan en `data/raw/exactus/` antes de reindexar.
-- Gemini en este proyecto usa `langchain-google-genai==2.1.12`, fijado para ser compatible con el stack de LangChain del repo.
-- No sobrescribas manualmente `data/processed/` salvo que quieras reconstruir el índice.
+### Ejemplo 2: Pregunta de Seguimiento (Usando Memoria Conversacional)
+- **Pregunta:** `¿Cuáles son sus carpetas?`
+- **Respuesta generada:**
+  > Las carpetas disponibles al registrar un cliente en el ERP Exactus son las siguientes:
+  > 
+  > 1. **General**: Información y aspectos generales de identificación.
+  > 2. **Condiciones**: Configuración de términos de pago y facturación.
+  > 3. **Otros**: Información adicional parametrizada.
+  > 4. **Direcciones**: Mantenimiento de direcciones del cliente.
+  > 5. **Tarjeta**: Datos de tarjetas asociadas si aplica.
+  > 6. **Rubros Valores**: Rubros parametrizados configurables.
+  > 7. **Corporativo**: Ajustes de cuentas de corporación.
+  > 8. **Notas**: Espacio para observaciones del cliente.
+  > 
+  > *Referencia: FA_Manual_Usuario_Facturacion.pdf — página: 116*
